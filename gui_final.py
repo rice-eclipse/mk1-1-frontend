@@ -14,8 +14,6 @@ from server_info import ServerInfo
 from graph_constants import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib
-matplotlib.use('TkAgg')
-
 
 class GUIBackend:
     def __init__(self, queue_lc1s, queue_lc2s, queue_lc3s, queue_lc_main, queue_tc1s, queue_tc2s, queue_tc3s,

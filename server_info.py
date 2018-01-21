@@ -49,6 +49,8 @@ class ServerInfo:
     SET_IGNITION = bytes([6])
     UNSET_IGNITION = bytes([7])
     NORM_IGNITE = bytes([8])
+    HALF_SEC_IGNITE = bytes([19])
+    THREEQ_SEC_IGNITE = bytes([20])
     LC_MAINS = bytes([9])
     LC1S = bytes([10])
     LC2S = bytes([11])

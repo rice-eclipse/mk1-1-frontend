@@ -41,6 +41,9 @@ class GUIBackend:
         for queue in self.queues:
             queue.append((0, 0))
 
+        self.gui_logs = deque(maxlen=10)
+        self.gui_logs.append("abcdefg")
+
         # A dictionary to match mtypes to queues (see _process_recv_message)
         self.queue_dict = {
             ServerInfo.LC1S: self.Q_LC1S,
@@ -74,6 +77,7 @@ class GUIBackend:
         self.nw.connect(addr=address, port=port)
 
     def ignite(self):
+        #todo send some numbers over
         self.nw.send(ServerInfo.NORM_IGNITE)
 
     @async
@@ -91,14 +95,19 @@ class GUIBackend:
         """
         if self.nw_queue.qsize() > 0:
             self.logger.debug("Processing Messages")
+            self.gui_logs.append(self.logger.format_log("DEBUG", "Processing Messages"))
 
         while self.nw_queue.qsize() > 0:
             mtype, nbytes, message = self.nw_queue.get()
             self.logger.debug("Processing message: Type:" + str(mtype) + " Nbytes:" + str(nbytes))
+            self.gui_logs.append(self.logger.format_log(
+                "DEBUG", "Processing message: Type:" + str(mtype) + " Nbytes:" + str(nbytes)))
 
             # If the data size isn't what we expect, do nothing
             if nbytes % self.nw.server_info.info.payload_bytes != 0:
                 self.logger.error("Received PAYLOAD message with improper number of bytes:" + str(nbytes))
+                self.gui_logs.append(self.logger.format_log(
+                    "ERROR", "Received PAYLOAD message with improper number of bytes:" + str(nbytes)))
                 return
             else:  # Check mtype to determine what to do
                 if mtype == ServerInfo.ACK_VALUE:
@@ -107,9 +116,12 @@ class GUIBackend:
                     self.nw.server_info.read_payload(message, nbytes, self.queue_dict[mtype], mtype)
                 elif mtype == ServerInfo.TEXT:
                     print(message.decode('utf-8'))
+                    self.gui_logs.append(self.logger.format_log("DECODE", message.decode('utf-8')))
                     # sys.stdout.write(message.decode('utf-8'))
                 else:
                     self.logger.error("Received incorrect message header type" + str(mtype))
+                    self.gui_logs.append(self.logger.format_log(
+                        "ERROR", "Received incorrect message header type" + str(mtype)))
 
 
 class GUIFrontend:
@@ -230,13 +242,13 @@ class GUIFrontend:
             .grid(row=1, column=1, sticky="w", padx=15)
         tk.ttk.Label(ignition_frame, text="Delay", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
 
-        burn_entry = tk.ttk.Entry(ignition_frame, width=6)
-        burn_entry.insert(tk.END, '3')
-        burn_entry.grid(row=2, column=1, padx=15, sticky="w")
+        self.burn_entry = tk.ttk.Entry(ignition_frame, width=6)
+        self.burn_entry.insert(tk.END, '3')
+        self.burn_entry.grid(row=2, column=1, padx=15, sticky="w")
 
-        delay_entry = tk.ttk.Entry(ignition_frame, width=6)
-        delay_entry.insert(tk.END, '0.5')
-        delay_entry.grid(row=2, column=2, padx=15, sticky="w")
+        self.delay_entry = tk.ttk.Entry(ignition_frame, width=6)
+        self.delay_entry.insert(tk.END, '0.5')
+        self.delay_entry.grid(row=2, column=2, padx=15, sticky="w")
 
         # TODO send the ignition length to the backend when we press the button
         set_ignition_button = tk.ttk.Button(ignition_frame, text="IGNITE",
@@ -263,8 +275,8 @@ class GUIFrontend:
                                    text_wrap='none',
                                    Header_foreground='blue',
                                    Header_padx=4,
-                                   hscrollmode="none",
-                                   vscrollmode="none",
+                                   hscrollmode='none',
+                                   vscrollmode='none'
                                    )
 
         # Create the column headers
@@ -277,6 +289,20 @@ class GUIFrontend:
         self.st.tag_configure('yellow', background='yellow')
 
         self.st.grid(row=1, column=1)
+
+        self.log_output = Pmw.ScrolledText(logging,
+                                           columnheader=1,
+                                           usehullsize=1,
+                                           hull_width=800,
+                                           hull_height=500,
+                                           text_wrap='none',
+                                           Header_foreground='blue',
+                                           Header_padx=4,
+                                           hscrollmode='none',
+                                           vscrollmode='none'
+                                           )
+
+        self.log_output.grid(row=2, column=1)
 
     def animate(self, *fargs):
         # Randomly generate some data to plot
@@ -364,6 +390,11 @@ class GUIFrontend:
 
         self.st.tag_add(("yellow"), '20.0', '20.' + str(len(averages) - 4))
         # print ('20.' + str(len(averages)))
+
+        # Logging output for the gui
+        for log in self.backend.gui_logs:
+            #todo .qsize() doesn't work for some reason
+            self.log_output.insert('end', log + '\n')
 
 
 

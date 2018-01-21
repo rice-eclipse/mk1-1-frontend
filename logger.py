@@ -85,16 +85,16 @@ class Logger:
         if self.level['value'] < level['value']:
             return
 
+        self._print_stdout(self.format_log(level, message))
 
+    def format_log(self, level, message):
         hms = time.strftime('%H:%M:%S')
-        self._print_stdout(
-            '[{hms}] [{name}] [{level}] {message}'.format(
+        return '[{hms}] [{name}] [{level}] {message}'.format(
                 hms=hms,
                 name=self.name,
                 level=level['name'],
                 message=message,
             )
-        )
 
     def _print_stdout(self, line):
         """

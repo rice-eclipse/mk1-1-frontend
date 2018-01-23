@@ -1,5 +1,7 @@
 import socket
 import threading
+from collections import deque
+
 from queue import Queue
 
 # A class used to handle all the networking:
@@ -59,6 +61,7 @@ class Networker:
         self.server_info = ServerInfo()
 
         self.logger.info("Initialized")
+        self.network_logs = deque(maxlen=10)
 
     def update_server_info(self, addr):
         if '127.0.0.1' == addr:
@@ -92,15 +95,22 @@ class Networker:
                 self.sock.connect((self.addr, int(self.port)))
             except socket.timeout:
                 self.logger.error("Connect timed out.")
+                self.network_logs.append((self.logger.format_log(LogLevel.ERROR, "Connect timed out.")))
             except OSError as e:
                 self.logger.error("Connection failed. OSError:" + e.strerror)
+                self.network_logs.append((self.logger.format_log(
+                    LogLevel.ERROR, "Connection failed. OSError:" + e.strerror)))
                 self.trying_connect = False
             except:
                 self.logger.error("Connect: Unexpected error:" + str(sys.exc_info()[0]))
+                self.network_logs.append((self.logger.format_log(
+                    LogLevel.ERROR, "Connect: Unexpected error:" + str(sys.exc_info()[0]))))
                 self.trying_connect = False
             else:
                 self.update_server_info(self.addr)
                 self.logger.error("Successfully connected. Using info" + self.server_info.info.__name__)
+                self.network_logs.append((self.logger.format_log(
+                    LogLevel.ERROR, "Successfully connected. Using info" + self.server_info.info.__name__)))
                 self.trying_connect = False
                 self.connected = True
                 # TODO make this variable not some hacky global.

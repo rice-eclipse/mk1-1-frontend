@@ -271,7 +271,7 @@ class GUIFrontend:
                                    columnheader=1,
                                    usehullsize=1,
                                    hull_width=800,
-                                   hull_height=500,
+                                   hull_height=400,
                                    text_wrap='none',
                                    Header_foreground='blue',
                                    Header_padx=4,
@@ -294,7 +294,7 @@ class GUIFrontend:
                                            columnheader=1,
                                            usehullsize=1,
                                            hull_width=800,
-                                           hull_height=500,
+                                           hull_height=180,
                                            text_wrap='none',
                                            Header_foreground='blue',
                                            Header_padx=4,
@@ -392,10 +392,13 @@ class GUIFrontend:
         # print ('20.' + str(len(averages)))
 
         # Logging output for the gui
-        for log in self.backend.gui_logs:
-            #todo .qsize() doesn't work for some reason
-            self.log_output.insert('end', log + '\n')
+        for i in range(len(list(self.backend.gui_logs))):
+            self.log_output.insert('end', list(self.backend.gui_logs)[i] + '\n')
+        self.backend.gui_logs.clear()
 
+        for i in range(len(list(self.backend.nw.network_logs))):
+            self.log_output.insert('end', list(self.backend.nw.network_logs)[i] + '\n')
+        self.backend.nw.network_logs.clear()
 
 
 frontend = GUIFrontend(GUIBackend([], [], [], [], [], [], [], [], [], []))

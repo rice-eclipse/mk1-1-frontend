@@ -30,13 +30,13 @@ str_to_byte = {
 # Data lengths is how many total samples we want to keep for graphing
 # e.g. 60000 at 1000 samples/second would be 1 minute of data
 data_lengths = {
-    "LC1S": 10,
-    "LC_MAIN": 10,
-    "LC2S": 10,
-    "LC3S": 10,
-    "PT_FEED": 10,
-    "PT_COMB": 10,
-    "PT_INJE": 10,
+    "LC1S": 1000,
+    "LC_MAIN": 1000,
+    "LC2S": 1000,
+    "LC3S": 1000,
+    "PT_FEED": 500,
+    "PT_COMB": 500,
+    "PT_INJE": 500,
     "TC1S": 10,
     "TC2S": 10,
     "TC3S": 10,
@@ -45,13 +45,13 @@ data_lengths = {
 # Samples to keep is how many samples we actually want to show in the graph
 # See data_ratio in animate() in gui_final
 samples_to_keep = {
-    "LC1S": 10,
-    "LC_MAIN": 10,
-    "LC2S": 10,
-    "LC3S": 10,
-    "PT_FEED": 10,
-    "PT_COMB": 10,
-    "PT_INJE": 10,
+    "LC1S": 500,
+    "LC_MAIN": 500,
+    "LC2S": 500,
+    "LC3S": 500,
+    "PT_FEED": 250,
+    "PT_COMB": 250,
+    "PT_INJE": 250,
     "TC1S": 10,
     "TC2S": 10,
     "TC3S": 10,

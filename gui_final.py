@@ -165,7 +165,7 @@ class GUIFrontend:
 
         self.plot_selections = ["LC_MAIN", "LC1S", "TC2S", "PT_INJE"]
 
-        self.animation = animation.FuncAnimation(figure, self.animate, interval=1)
+        self.animation = animation.FuncAnimation(figure, self.animate, interval=100)
 
         # This frame contains everything to do with buttons and entry boxes on the right hand side
         control_panel = tk.Frame(background="AliceBlue", width=350, height=625)
@@ -349,7 +349,6 @@ class GUIFrontend:
         self.st.clear()
         # Create the data rows and the row headers
         numRows = 20
-        tagList = []
         for row in range(1, numRows):
             dataLine = ''
             x = row / 5.0
@@ -358,18 +357,11 @@ class GUIFrontend:
                 value = data_queue[max(-len(data_queue) + 1, -numRows + row)][0]
                 # print ("value", value)
                 data = str(value)[:9]
-                if value < 500:
-                    tag1 = '%d.%d' % (row, len(dataLine))
-                    tag2 = '%d.%d' % (row, len(dataLine) + len(data))
-                    tagList.append(tag1)
-                    tagList.append(tag2)
                 data = '%-7s' % (data,)
                 dataLine = dataLine + data + '   '
 
             dataLine = dataLine + '\n'
             self.st.insert('end', dataLine)
-            # print ("data", dataLine)
-            # print ("tags", tuple(tagList))
 
         averages = ''
         for column in range(len(self.choices)):
@@ -381,7 +373,6 @@ class GUIFrontend:
         self.st.insert('end', averages)
 
         self.st.tag_add(("yellow"), '20.0', '20.' + str(len(averages) - 4))
-        # print ('20.' + str(len(averages)))
 
         # Logging output for the gui
         for i in range(len(self.backend.gui_logs)):

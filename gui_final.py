@@ -41,9 +41,6 @@ class GUIBackend:
         for queue in self.queues:
             queue.append((0, 0))
 
-        self.gui_logs = deque(maxlen=10)
-        self.gui_logs.append("abcdefg")
-
         # A dictionary to match mtypes to queues (see _process_recv_message)
         self.queue_dict = {
             ServerInfo.LC1S: self.Q_LC1S,
@@ -58,7 +55,8 @@ class GUIBackend:
             ServerInfo.PT_INJES: self.Q_INJE
         }
 
-        self.logger = Logger(name='GUI', level=LogLevel.INFO, outfile='gui.log')
+        self.gui_logs = ["gui logs"]
+        self.logger = Logger(name='GUI', log_list=self.gui_logs, level=LogLevel.INFO, outfile='gui.log')
         self._periodic_process_recv()
 
     def send_text(self, s):
@@ -78,6 +76,7 @@ class GUIBackend:
 
     def ignite(self):
         #todo send some numbers over
+        self.logger.error("IGNITING!!!")
         self.nw.send(ServerInfo.NORM_IGNITE)
 
     @async
@@ -95,19 +94,14 @@ class GUIBackend:
         """
         if self.nw_queue.qsize() > 0:
             self.logger.debug("Processing Messages")
-            self.gui_logs.append(self.logger.format_log("DEBUG", "Processing Messages"))
 
         while self.nw_queue.qsize() > 0:
             mtype, nbytes, message = self.nw_queue.get()
             self.logger.debug("Processing message: Type:" + str(mtype) + " Nbytes:" + str(nbytes))
-            self.gui_logs.append(self.logger.format_log(
-                "DEBUG", "Processing message: Type:" + str(mtype) + " Nbytes:" + str(nbytes)))
 
             # If the data size isn't what we expect, do nothing
             if nbytes % self.nw.server_info.info.payload_bytes != 0:
                 self.logger.error("Received PAYLOAD message with improper number of bytes:" + str(nbytes))
-                self.gui_logs.append(self.logger.format_log(
-                    "ERROR", "Received PAYLOAD message with improper number of bytes:" + str(nbytes)))
                 return
             else:  # Check mtype to determine what to do
                 if mtype == ServerInfo.ACK_VALUE:
@@ -116,12 +110,9 @@ class GUIBackend:
                     self.nw.server_info.read_payload(message, nbytes, self.queue_dict[mtype], mtype)
                 elif mtype == ServerInfo.TEXT:
                     print(message.decode('utf-8'))
-                    self.gui_logs.append(self.logger.format_log("DECODE", message.decode('utf-8')))
                     # sys.stdout.write(message.decode('utf-8'))
                 else:
                     self.logger.error("Received incorrect message header type" + str(mtype))
-                    self.gui_logs.append(self.logger.format_log(
-                        "ERROR", "Received incorrect message header type" + str(mtype)))
 
 
 class GUIFrontend:
@@ -173,7 +164,7 @@ class GUIFrontend:
 
         self.plot_selections = ["LC_MAIN", "LC1S", "TC2S", "PT_INJE"]
 
-        self.animation = animation.FuncAnimation(figure, self.animate, interval=10)
+        self.animation = animation.FuncAnimation(figure, self.animate, interval=1)
 
         # This frame contains everything to do with buttons and entry boxes on the right hand side
         control_panel = tk.Frame(background="AliceBlue", width=350, height=625)
@@ -185,7 +176,7 @@ class GUIFrontend:
         tk.ttk.Label(network_frame, text="port", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
 
         ip_entry = tk.ttk.Entry(network_frame, width=15)
-        ip_entry.insert(tk.END, '192.168.1.137')
+        ip_entry.insert(tk.END, '127.0.0.1')
         ip_entry.grid(row=2, column=1, padx=15)
 
         port_entry = tk.ttk.Entry(network_frame, width=5)
@@ -306,10 +297,10 @@ class GUIFrontend:
 
     def animate(self, *fargs):
         # Randomly generate some data to plot
-        for queue in self.backend.queues:
-            length = len(queue) - 1
-            for j in range(1, 11):
-                queue.append((random.randint(0, 1000), queue[length][1] + j))
+        # for queue in self.backend.queues:
+            # length = len(queue) - 1
+            # for j in range(1, 11):
+                # queue.append((random.randint(0, 1000), queue[length][1] + j))
                 # queue.append((queue[length][1] + j, queue[length][1] + j))
             # print (queue)
         # print (self.backend.queues[0][-10:])
@@ -392,12 +383,12 @@ class GUIFrontend:
         # print ('20.' + str(len(averages)))
 
         # Logging output for the gui
-        for i in range(len(list(self.backend.gui_logs))):
-            self.log_output.insert('end', list(self.backend.gui_logs)[i] + '\n')
+        for i in range(len(self.backend.gui_logs)):
+            self.log_output.insert('end', self.backend.gui_logs[i] + '\n')
         self.backend.gui_logs.clear()
 
-        for i in range(len(list(self.backend.nw.network_logs))):
-            self.log_output.insert('end', list(self.backend.nw.network_logs)[i] + '\n')
+        for i in range(len(self.backend.nw.network_logs)):
+            self.log_output.insert('end', self.backend.nw.network_logs[i] + '\n')
         self.backend.nw.network_logs.clear()
 
 

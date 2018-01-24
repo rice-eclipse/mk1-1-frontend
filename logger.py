@@ -18,7 +18,7 @@ class LogLevel:
 
 
 class Logger:
-    def __init__(self, name, level=LogLevel.DEBUG, outfile=None):
+    def __init__(self, name, log_list, level=LogLevel.DEBUG, outfile=None):
         """
         Initializes a logger.
 
@@ -27,6 +27,7 @@ class Logger:
         """
         self.name = name
         self.level = level
+        self.log_list = log_list
 
         if outfile != None:
             self.fout = open(outfile, mode='a')
@@ -85,6 +86,7 @@ class Logger:
         if self.level['value'] < level['value']:
             return
 
+        self.log_list.append(self.format_log(level, message))
         self._print_stdout(self.format_log(level, message))
 
     def format_log(self, level, message):

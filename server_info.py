@@ -149,7 +149,7 @@ class ServerInfo:
         #print(ServerInfo.filenames.keys())
 
         if (mtype != None and mtype in ServerInfo.filenames.keys()):
-            save_file = open('logs/' + ServerInfo.filenames[mtype] + '.log', 'a')
+            save_file = open('logs/' + ServerInfo.filenames[mtype] + '.log', 'a+')
             writer = csv.writer(save_file, delimiter=" ")
             #print("Starting logger for message")
         else:
@@ -174,7 +174,7 @@ class ServerInfo:
             if (save_file != None):
                 writer.writerow([str(t), str(d), str(cal)])
             if (out_queue is not None):
-                out_queue.append(cal, t)
+                out_queue.append((cal, t))
                 # out_queue.put((cal, t))
 
         if (save_file is not None):

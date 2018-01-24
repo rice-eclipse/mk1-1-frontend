@@ -72,6 +72,7 @@ class GUIBackend:
         self.nw.send(b)
 
     def connect(self, address, port):
+        self.nw.update_server_info(addr=address)
         self.nw.connect(addr=address, port=port)
 
     def ignite(self):

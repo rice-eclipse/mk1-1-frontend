@@ -65,7 +65,7 @@ class Networker:
         self.logger.info("Initialized")
 
     def update_server_info(self, addr):
-        if '127.0.0.1' == addr:
+        if socket.gethostbyaddr(addr)[0] != 'raspberry':
             self.server_info.info = ServerInfo.OtherInfo
         else:
             self.server_info.info = ServerInfo.PiInfo

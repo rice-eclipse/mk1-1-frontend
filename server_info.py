@@ -2,8 +2,6 @@
 
 # Information on the values of headers sent:
 import csv
-import socket
-import sys
 
 class ServerInfo:
     """

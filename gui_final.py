@@ -165,7 +165,7 @@ class GUIFrontend:
 
         self.plot_selections = ["LC_MAIN", "LC1S", "TC2S", "PT_INJE"]
 
-        self.animation = animation.FuncAnimation(figure, self.animate, interval=100)
+        self.animation = animation.FuncAnimation(figure, self.animate, interval=500)
 
         # This frame contains everything to do with buttons and entry boxes on the right hand side
         control_panel = tk.Frame(background="AliceBlue", width=350, height=625)
@@ -177,7 +177,7 @@ class GUIFrontend:
         tk.ttk.Label(network_frame, text="port", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
 
         ip_entry = tk.ttk.Entry(network_frame, width=15)
-        ip_entry.insert(tk.END, '127.0.0.1')
+        ip_entry.insert(tk.END, '192.168.1.137')
         ip_entry.grid(row=2, column=1, padx=15)
 
         port_entry = tk.ttk.Entry(network_frame, width=5)

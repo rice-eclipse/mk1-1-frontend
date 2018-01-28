@@ -244,14 +244,14 @@ class GUIFrontend:
 
         # TODO send the ignition length to the backend when we press the button
         set_ignition_button = tk.ttk.Button(ignition_frame, text="IGNITE",
-                                            command=lambda: backend.send(ServerInfo.SET_IGNITION))
+                                            command=lambda: backend.send(ServerInfo.NORM_IGNITE))
         set_ignition_image = PhotoImage(file="ignite.gif")
         set_ignition_button.config(image=set_ignition_image)
         set_ignition_button.image = set_ignition_image
         set_ignition_button.grid(row=3, column=1, padx=15, pady=10)
 
         unset_ignition_button = tk.ttk.Button(ignition_frame, text="UNIGNITE",
-                                          command=lambda: backend.send(ServerInfo.UNSET_IGNITION))
+                                          command=lambda: backend.send(ServerInfo.UNSET_VALVE))
         unset_ignition_image = PhotoImage(file="unignite.gif")
         unset_ignition_button.config(image=unset_ignition_image)
         unset_ignition_button.image = unset_ignition_image

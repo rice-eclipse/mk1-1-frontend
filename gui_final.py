@@ -1,19 +1,14 @@
-from collections import deque
 from tkinter import PhotoImage
 import matplotlib.pyplot as plt
 from scipy import random
 import tkinter as tk
-import math
-from tkinter import scrolledtext
 import Pmw
 import tkinter.ttk as ttk
 from concurrency import async
 from networking import*
 import matplotlib.animation as animation
-from server_info import ServerInfo
-from graph_constants import *
+from gui_constants import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib
 
 class GUIBackend:
     def __init__(self, queue_lc1s, queue_lc2s, queue_lc3s, queue_lc_main, queue_tc1s, queue_tc2s, queue_tc3s,
@@ -43,16 +38,16 @@ class GUIBackend:
 
         # A dictionary to match mtypes to queues (see _process_recv_message)
         self.queue_dict = {
-            ServerInfo.LC1S: self.Q_LC1S,
-            ServerInfo.LC2S: self.Q_LC2S,
-            ServerInfo.LC3S: self.Q_LC3S,
-            ServerInfo.LC_MAINS: self.Q_LCMAIN,
-            ServerInfo.TC1S: self.Q_TC1S,
-            ServerInfo.TC2S: self.Q_TC2S,
-            ServerInfo.TC3S: self.Q_TC3S,
-            ServerInfo.PT_FEEDS: self.Q_FEED,
-            ServerInfo.PT_COMBS: self.Q_COMB,
-            ServerInfo.PT_INJES: self.Q_INJE
+            ServerInfo.LC1: self.Q_LC1,
+            ServerInfo.LC2: self.Q_LC2,
+            ServerInfo.LC3: self.Q_LC3,
+            ServerInfo.LC_MAIN: self.Q_LCMAIN,
+            ServerInfo.TC1: self.Q_TC1,
+            ServerInfo.TC2: self.Q_TC2,
+            ServerInfo.TC3: self.Q_TC3,
+            ServerInfo.PT_FEED: self.Q_FEED,
+            ServerInfo.PT_COMB: self.Q_COMB,
+            ServerInfo.PT_INJE: self.Q_INJE
         }
 
         self.gui_logs = ["gui logs"]
@@ -194,7 +189,7 @@ class GUIFrontend:
         # Frame for selection of graphs
         graph_frame = tk.LabelFrame(control_panel, text="Graphs", background="AliceBlue")
 
-        self.choices = ["LC1S", "LC2S", "LC3S", "LC_MAIN", "PT_FEED", "PT_INJE", "PT_COMB", "TC1S", "TC2S", "TC3S"]
+        self.choices = ["LC1", "LC2", "LC3", "LC_MAIN", "PT_FEED", "PT_INJE", "PT_COMB", "TC1", "TC2", "TC3"]
         self.graph_variables = [tk.StringVar(graph_frame), tk.StringVar(graph_frame),
                                 tk.StringVar(graph_frame), tk.StringVar(graph_frame)]
         self.fine_control = tk.BooleanVar(graph_frame)
@@ -272,11 +267,11 @@ class GUIFrontend:
                                    )
 
         # Create the column headers
-        headerLine = ''
+        header_line = ''
         for column in range(len(self.choices)):
-            headerLine = headerLine + ('%-7s   ' % (self.choices[column],))
-        headerLine = headerLine[:-3]
-        self.st.component('columnheader').insert('0.0', headerLine)
+            headerLine = header_line + ('%-7s   ' % (self.choices[column],))
+        header_line = header_line[:-3]
+        self.st.component('columnheader').insert('0.0', header_line)
 
         self.st.tag_configure('yellow', background='yellow')
 
@@ -298,19 +293,22 @@ class GUIFrontend:
 
     def animate(self, *fargs):
         # Randomly generate some data to plot
-        # for queue in self.backend.queues:
-            # length = len(queue) - 1
-            # for j in range(1, 11):
-                # queue.append((random.randint(0, 1000), queue[length][1] + j))
-                # queue.append((queue[length][1] + j, queue[length][1] + j))
-            # print (queue)
-        # print (self.backend.queues[0][-10:])
+        for queue in self.backend.queues:
+            length = len(queue) - 1
+            for j in range(1, 11):
+                queue.append((random.randint(0, 1000), queue[length][1] + j))
+                queue.append((queue[length][1] + j, queue[length][1] + j))
+
+        # Truncate the data based on our data_length constants
+        for key in self.backend.queue_dict.keys():
+            data_length = data_lengths[ServerInfo.filenames[key]]
+            self.backend.queue_dict[key] = self.backend.queue_dict[key][-data_length:]
 
         # Only graph if we are on the mission control tab
         if self.notebook.index(self.notebook.select()) == 0:
             self.update_graphs()
         elif self.notebook.index(self.notebook.select()) == 1:
-           self.update_log_displays()
+            self.update_log_displays()
 
     def update_graphs(self):
         for i in range(4):
@@ -323,11 +321,14 @@ class GUIFrontend:
                 data_ratio = 1
             else:
                 data_ratio = int(data_lengths[graph_selection] / samples_to_keep[graph_selection])
-            # print (data_ratio)
 
-            self.plots[i].set_xdata([t for cal, t in data_queue[-data_length::data_ratio]])
-            self.plots[i].set_ydata([cal for cal, t in data_queue[-data_length::data_ratio]])
+            # self.plots[i].set_xdata([t for cal, t in data_queue[-data_length::data_ratio]])
+            # self.plots[i].set_ydata([cal for cal, t in data_queue[-data_length::data_ratio]])
 
+            self.plots[i].set_xdata([t for cal, t in data_queue[::data_ratio]])
+            self.plots[i].set_ydata([cal for cal, t in data_queue[::data_ratio]])
+
+            #todo disabiling this might speed up graphing by a lot
             self.axes_list[i].relim()
 
             # Rescaling the axes is apparently very expensive, so only do it if the data is out of bounds
@@ -343,14 +344,15 @@ class GUIFrontend:
             self.axes_list[i].set_xlabel(labels[graph_selection][0])
             self.axes_list[i].set_ylabel(labels[graph_selection][1])
 
-            self.plot_selections[i] = graph_selection
+            # Keep track of which graphs we are currently showing
+            # self.plot_selections[i] = graph_selection
 
     def update_log_displays(self):
         self.st.clear()
         # Create the data rows and the row headers
         numRows = 20
         for row in range(1, numRows):
-            dataLine = ''
+            data_line = ''
             x = row / 5.0
             for column in range(len(self.choices)):
                 data_queue = self.backend.queue_dict[str_to_byte[self.choices[column]]]
@@ -358,10 +360,9 @@ class GUIFrontend:
                 # print ("value", value)
                 data = str(value)[:9]
                 data = '%-7s' % (data,)
-                dataLine = dataLine + data + '   '
+                data_line = data_line + data + '      '
 
-            dataLine = dataLine + '\n'
-            self.st.insert('end', dataLine)
+            self.st.insert('end', data_line + '\n')
 
         averages = ''
         for column in range(len(self.choices)):

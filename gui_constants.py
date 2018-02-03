@@ -14,45 +14,44 @@ labels = {
 }
 
 str_to_byte = {
-    'LC1S': ServerInfo.LC1S,
-    'LC_MAIN': ServerInfo.LC_MAINS,
-    'LC2S': ServerInfo.LC2S,
-    'LC3S': ServerInfo.LC3S,
-    'PT_FEED': ServerInfo.PT_FEEDS,
-    'PT_COMB': ServerInfo.PT_COMBS,
-    'PT_INJE': ServerInfo.PT_INJES,
-    'TC1S': ServerInfo.TC1S,
-    'TC2S': ServerInfo.TC2S,
-    'TC3S': ServerInfo.TC3S
+    'LC1S': ServerInfo.LC1,
+    'LC_MAIN': ServerInfo.LC_MAIN,
+    'LC2S': ServerInfo.LC2,
+    'LC3S': ServerInfo.LC3,
+    'PT_FEED': ServerInfo.PT_FEED,
+    'PT_COMB': ServerInfo.PT_COMB,
+    'PT_INJE': ServerInfo.PT_INJE,
+    'TC1S': ServerInfo.TC1,
+    'TC2S': ServerInfo.TC2,
+    'TC3S': ServerInfo.TC3
 }
 
-#TODO update these values at some point
 # Data lengths is how many total samples we want to keep for graphing
 # e.g. 60000 at 1000 samples/second would be 1 minute of data
 data_lengths = {
-    "LC1S": 1000,
+    "LC1": 1000,
     "LC_MAIN": 1000,
-    "LC2S": 1000,
-    "LC3S": 1000,
+    "LC2": 1000,
+    "LC3": 1000,
     "PT_FEED": 500,
     "PT_COMB": 500,
     "PT_INJE": 500,
-    "TC1S": 10,
-    "TC2S": 10,
-    "TC3S": 10,
+    "TC1": 10,
+    "TC2": 10,
+    "TC3": 10,
 }
 
 # Samples to keep is how many samples we actually want to show in the graph
 # See data_ratio in animate() in gui_final
 samples_to_keep = {
-    "LC1S": 500,
+    "LC1": 500,
     "LC_MAIN": 500,
-    "LC2S": 500,
-    "LC3S": 500,
+    "LC2": 500,
+    "LC3": 500,
     "PT_FEED": 250,
     "PT_COMB": 250,
     "PT_INJE": 250,
-    "TC1S": 10,
-    "TC2S": 10,
-    "TC3S": 10,
+    "TC1": 10,
+    "TC2": 10,
+    "TC3": 10,
 }

@@ -40,7 +40,7 @@ class Networker:
     def make_socket():
         sock = socket.socket()
         # 50ms timeout, with the intent of giving just a bit of time if receiving.
-        sock.settimeout(0.05)
+        sock.settimeout(1)
 
         return sock
 

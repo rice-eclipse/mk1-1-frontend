@@ -57,7 +57,7 @@ class Networker:
         self.thr = Networker.NWThread(1, 'NWThread', 1, self)
         self.thr.start()
 
-        self.network_logs = ["abcdefg"]
+        self.network_logs = ["Network Logs Ready"]
         self.logger = Logger(name='networker', log_list=self.network_logs, level=loglevel, outfile='networker.log')
 
         self.server_info = ServerInfo()

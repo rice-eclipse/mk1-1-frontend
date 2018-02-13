@@ -49,54 +49,41 @@ class ServerInfo:
     NORM_IGNITE = bytes([8])
     HALF_SEC_IGNITE = bytes([19])
     THREEQ_SEC_IGNITE = bytes([20])
-    LC_MAINS = bytes([9])
-    LC1S = bytes([10])
-    LC2S = bytes([11])
-    LC3S = bytes([12])
-    PT_FEEDS = bytes([13])
-    PT_INJES = bytes([14])
-    PT_COMBS = bytes([15])
-    TC1S = bytes([16])
-    TC2S = bytes([17])
-    TC3S = bytes([18])
+    LC_MAIN_SEND = bytes([9])
+    LC1_SEND = bytes([10])
+    LC2_SEND = bytes([11])
+    LC3_SEND = bytes([12])
+    PT_FEED_SEND = bytes([13])
+    PT_INJE_SEND = bytes([14])
+    PT_COMB_SEND = bytes([15])
+    TC1_SEND = bytes([16])
+    TC2_SEND = bytes([17])
+    TC3_SEND = bytes([18])
 
     filenames = {
-        LC1S: 'LC1',
-        LC_MAINS: 'LC_MAIN',
-        LC2S: 'LC2',
-        LC3S: 'LC3',
-        PT_FEEDS: 'PT_FEED',
-        PT_COMBS: 'PT_COMB',
-        PT_INJES: 'PT_INJE',
-        TC1S: 'TC1',
-        TC2S: 'TC2',
-        TC3S: 'TC3'
-    }
-
-    averages = {
-        LC1S: 0,
-        LC_MAINS: 0,
-        LC2S: 0,
-        LC3S: 0,
-        PT_FEEDS: 0,
-        PT_COMBS: 0,
-        PT_INJES: 0,
-        TC1S: 0,
-        TC2S: 0,
-        TC3S: 0
+        LC1_SEND: 'LC1',
+        LC_MAIN_SEND: 'LC_MAIN',
+        LC2_SEND: 'LC2',
+        LC3_SEND: 'LC3',
+        PT_FEED_SEND: 'PT_FEED',
+        PT_COMB_SEND: 'PT_COMB',
+        PT_INJE_SEND: 'PT_INJE',
+        TC1_SEND: 'TC1',
+        TC2_SEND: 'TC2',
+        TC3_SEND: 'TC3'
     }
 
     calibrations = {
-        LC1S: (1, 0),
-        LC_MAINS: (0.1365, -66.885),
-        LC2S: (1, 0),
-        LC3S: (1, 0),
-        PT_FEEDS: (-0.34601, 1384.847),
-        PT_COMBS: (-0.36002, 1412.207),
-        PT_INJES: (-0.35479, 1379.436),
-        TC1S: (0.1611, -250),
-        TC2S: (0.1611, -250),
-        TC3S: (0.1611, -250)
+        LC1_SEND: (1, 0),
+        LC_MAIN_SEND: (0.1365, -66.885),
+        LC2_SEND: (1, 0),
+        LC3_SEND: (1, 0),
+        PT_FEED_SEND: (-0.34601, 1384.847),
+        PT_COMB_SEND: (-0.36002, 1412.207),
+        PT_INJE_SEND: (-0.35479, 1379.436),
+        TC1_SEND: (0.1611, -250),
+        TC2_SEND: (0.1611, -250),
+        TC3_SEND: (0.1611, -250)
     }
 
     class PiInfo:

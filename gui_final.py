@@ -1,56 +1,57 @@
 from tkinter import PhotoImage
 import matplotlib.pyplot as plt
-from scipy import random
 import tkinter as tk
 import Pmw
+import random
 import tkinter.ttk as ttk
 from concurrency import async
 from networking import*
 import matplotlib.animation as animation
-from gui_constants import *
+from graph_constants import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+
 class GUIBackend:
-    def __init__(self, queue_lc1s, queue_lc2s, queue_lc3s, queue_lc_main, queue_tc1s, queue_tc2s, queue_tc3s,
-                 queue_feed, queue_inje, queue_comb):
+    def __init__(self, queue_lc1_send, queue_lc2_send, queue_lc3_send, queue_lc_main_send, queue_tc1_send,
+                 queue_tc2_send, queue_tc3_send, queue_feed_send, queue_inje_send, queue_comb_send):
 
         self.nw_queue = Queue()
         self.nw = Networker(queue=self.nw_queue, loglevel=LogLevel.INFO)
 
-        self.Q_LC1S = queue_lc1s
-        self.Q_LC2S = queue_lc2s
-        self.Q_LC3S = queue_lc3s
-        self.Q_LCMAIN = queue_lc_main
+        self.Q_LC1 = queue_lc1_send
+        self.Q_LC2 = queue_lc2_send
+        self.Q_LC3 = queue_lc3_send
+        self.Q_LC_MAIN = queue_lc_main_send
 
-        self.Q_TC1S = queue_tc1s
-        self.Q_TC2S = queue_tc2s
-        self.Q_TC3S = queue_tc3s
+        self.Q_TC1 = queue_tc1_send
+        self.Q_TC2 = queue_tc2_send
+        self.Q_TC3 = queue_tc3_send
 
-        self.Q_FEED = queue_feed
-        self.Q_INJE = queue_inje
-        self.Q_COMB = queue_comb
+        self.Q_FEED = queue_feed_send
+        self.Q_INJE = queue_inje_send
+        self.Q_COMB = queue_comb_send
 
-        self.queues = [self.Q_LC1S, self.Q_LC2S, self.Q_LC3S, self.Q_LCMAIN, self.Q_TC1S,
-                       self.Q_TC2S, self.Q_TC3S, self.Q_FEED, self.Q_INJE, self.Q_COMB]
+        self.queues = [self.Q_LC1, self.Q_LC2, self.Q_LC3, self.Q_LC_MAIN, self.Q_TC1,
+                       self.Q_TC2, self.Q_TC3, self.Q_FEED, self.Q_INJE, self.Q_COMB]
 
         for queue in self.queues:
             queue.append((0, 0))
 
         # A dictionary to match mtypes to queues (see _process_recv_message)
         self.queue_dict = {
-            ServerInfo.LC1: self.Q_LC1,
-            ServerInfo.LC2: self.Q_LC2,
-            ServerInfo.LC3: self.Q_LC3,
-            ServerInfo.LC_MAIN: self.Q_LCMAIN,
-            ServerInfo.TC1: self.Q_TC1,
-            ServerInfo.TC2: self.Q_TC2,
-            ServerInfo.TC3: self.Q_TC3,
-            ServerInfo.PT_FEED: self.Q_FEED,
-            ServerInfo.PT_COMB: self.Q_COMB,
-            ServerInfo.PT_INJE: self.Q_INJE
+            ServerInfo.LC1_SEND: self.Q_LC1,
+            ServerInfo.LC2_SEND: self.Q_LC2,
+            ServerInfo.LC3_SEND: self.Q_LC3,
+            ServerInfo.LC_MAIN_SEND: self.Q_LC_MAIN,
+            ServerInfo.TC1_SEND: self.Q_TC1,
+            ServerInfo.TC2_SEND: self.Q_TC2,
+            ServerInfo.TC3_SEND: self.Q_TC3,
+            ServerInfo.PT_FEED_SEND: self.Q_FEED,
+            ServerInfo.PT_COMB_SEND: self.Q_COMB,
+            ServerInfo.PT_INJE_SEND: self.Q_INJE
         }
 
-        self.gui_logs = ["gui logs"]
+        self.gui_logs = ["GUI Logs Ready"]
         self.logger = Logger(name='GUI', log_list=self.gui_logs, level=LogLevel.INFO, outfile='gui.log')
         self._periodic_process_recv()
 
@@ -71,7 +72,7 @@ class GUIBackend:
         self.nw.connect(addr=address, port=port)
 
     def ignite(self):
-        #todo send some numbers over
+        # todo send some numbers over
         self.logger.error("IGNITING!!!")
         self.nw.send(ServerInfo.NORM_IGNITE)
 
@@ -158,7 +159,7 @@ class GUIFrontend:
 
         # plt.setp(self.plots[0], aa=True)
 
-        self.plot_selections = ["LC_MAIN", "LC1S", "TC2S", "PT_INJE"]
+        self.plot_selections = ["LC_MAIN", "LC1", "TC2", "PT_INJE"]
 
         self.animation = animation.FuncAnimation(figure, self.animate, interval=500)
 
@@ -184,7 +185,7 @@ class GUIFrontend:
         tk.ttk.Button(network_frame, text="Disconnect", command=lambda: backend.nw.disconnect()) \
             .grid(row=3, column=2, pady=(15, 10), padx=15)
 
-        network_frame.grid(row=1, column=1, pady=(7 , 20))
+        network_frame.grid(row=1, column=1, pady=(7, 20))
 
         # Frame for selection of graphs
         graph_frame = tk.LabelFrame(control_panel, text="Graphs", background="AliceBlue")
@@ -239,14 +240,14 @@ class GUIFrontend:
 
         # TODO send the ignition length to the backend when we press the button
         set_ignition_button = tk.ttk.Button(ignition_frame, text="IGNITE",
-                                            command=lambda: backend.send(ServerInfo.NORM_IGNITE))
+                                            command=lambda: backend.send(ServerInfo.SET_IGNITION))
         set_ignition_image = PhotoImage(file="ignite.gif")
         set_ignition_button.config(image=set_ignition_image)
         set_ignition_button.image = set_ignition_image
         set_ignition_button.grid(row=3, column=1, padx=15, pady=10)
 
         unset_ignition_button = tk.ttk.Button(ignition_frame, text="UNIGNITE",
-                                          command=lambda: backend.send(ServerInfo.UNSET_VALVE))
+                                              command=lambda: backend.send(ServerInfo.UNSET_IGNITION))
         unset_ignition_image = PhotoImage(file="unignite.gif")
         unset_ignition_button.config(image=unset_ignition_image)
         unset_ignition_button.image = unset_ignition_image
@@ -258,30 +259,27 @@ class GUIFrontend:
                                    columnheader=1,
                                    usehullsize=1,
                                    hull_width=800,
-                                   hull_height=400,
+                                   hull_height=350,
                                    text_wrap='none',
                                    Header_foreground='blue',
                                    Header_padx=4,
                                    hscrollmode='none',
                                    vscrollmode='none'
                                    )
+        self.st.tag_configure('yellow', background='yellow')
 
         # Create the column headers
         header_line = ''
         for column in range(len(self.choices)):
-            headerLine = header_line + ('%-7s   ' % (self.choices[column],))
-        header_line = header_line[:-3]
+            header_line = header_line + self.choices[column] + ' ' * (10 - len(self.choices[column]))
         self.st.component('columnheader').insert('0.0', header_line)
-
-        self.st.tag_configure('yellow', background='yellow')
-
         self.st.grid(row=1, column=1)
 
         self.log_output = Pmw.ScrolledText(logging,
                                            columnheader=1,
                                            usehullsize=1,
                                            hull_width=800,
-                                           hull_height=180,
+                                           hull_height=250,
                                            text_wrap='none',
                                            Header_foreground='blue',
                                            Header_padx=4,
@@ -297,12 +295,8 @@ class GUIFrontend:
             length = len(queue) - 1
             for j in range(1, 11):
                 queue.append((random.randint(0, 1000), queue[length][1] + j))
-                queue.append((queue[length][1] + j, queue[length][1] + j))
-
-        # Truncate the data based on our data_length constants
-        for key in self.backend.queue_dict.keys():
-            data_length = data_lengths[ServerInfo.filenames[key]]
-            self.backend.queue_dict[key] = self.backend.queue_dict[key][-data_length:]
+            # print (queue)
+        # print (self.backend.queues[0][-10:])
 
         # Only graph if we are on the mission control tab
         if self.notebook.index(self.notebook.select()) == 0:
@@ -321,14 +315,11 @@ class GUIFrontend:
                 data_ratio = 1
             else:
                 data_ratio = int(data_lengths[graph_selection] / samples_to_keep[graph_selection])
+            # print (data_ratio)
 
-            # self.plots[i].set_xdata([t for cal, t in data_queue[-data_length::data_ratio]])
-            # self.plots[i].set_ydata([cal for cal, t in data_queue[-data_length::data_ratio]])
+            self.plots[i].set_xdata([t for cal, t in data_queue[-data_length::data_ratio]])
+            self.plots[i].set_ydata([cal for cal, t in data_queue[-data_length::data_ratio]])
 
-            self.plots[i].set_xdata([t for cal, t in data_queue[::data_ratio]])
-            self.plots[i].set_ydata([cal for cal, t in data_queue[::data_ratio]])
-
-            #todo disabiling this might speed up graphing by a lot
             self.axes_list[i].relim()
 
             # Rescaling the axes is apparently very expensive, so only do it if the data is out of bounds
@@ -344,36 +335,32 @@ class GUIFrontend:
             self.axes_list[i].set_xlabel(labels[graph_selection][0])
             self.axes_list[i].set_ylabel(labels[graph_selection][1])
 
-            # Keep track of which graphs we are currently showing
-            # self.plot_selections[i] = graph_selection
+            self.plot_selections[i] = graph_selection
 
     def update_log_displays(self):
         self.st.clear()
         # Create the data rows and the row headers
-        numRows = 20
-        for row in range(1, numRows):
+        num_rows = 20
+        for row in range(1, num_rows):
             data_line = ''
-            x = row / 5.0
             for column in range(len(self.choices)):
+                # print(self.choices)
                 data_queue = self.backend.queue_dict[str_to_byte[self.choices[column]]]
-                value = data_queue[max(-len(data_queue) + 1, -numRows + row)][0]
+                value = str(data_queue[max(-len(data_queue) + 1, -num_rows + row)][0])
                 # print ("value", value)
-                data = str(value)[:9]
-                data = '%-7s' % (data,)
-                data_line = data_line + data + '      '
-
-            self.st.insert('end', data_line + '\n')
+                data_line = data_line + value + ' ' * (10 - len(value))
+            data_line = data_line + '\n'
+            self.st.insert('end', data_line)
 
         averages = ''
         for column in range(len(self.choices)):
             data_queue = self.backend.queue_dict[str_to_byte[self.choices[column]]]
-            average = sum([cal for cal, t in data_queue[-10:]]) / 10.0
-            data = str(average)[:9]
-            data = '%-7s' % (data,)
-            averages = averages + data + '   '
+            avg = str(sum([cal for cal, t in data_queue[-num_rows:]]) / num_rows)
+            # data = str(average)[:9]
+            # data = '%-7s' % (data,)
+            averages = averages + avg + ' ' * (10 - len(avg))
         self.st.insert('end', averages)
-
-        self.st.tag_add(("yellow"), '20.0', '20.' + str(len(averages) - 4))
+        self.st.tag_add("yellow", '20.0', '20.' + str(len(averages)))
 
         # Logging output for the gui
         for i in range(len(self.backend.gui_logs)):

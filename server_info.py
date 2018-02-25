@@ -49,41 +49,41 @@ class ServerInfo:
     NORM_IGNITE = bytes([8])
     HALF_SEC_IGNITE = bytes([19])
     THREEQ_SEC_IGNITE = bytes([20])
-    LC_MAIN = bytes([9])
-    LC1 = bytes([10])
-    LC2 = bytes([11])
-    LC3 = bytes([12])
-    PT_FEED = bytes([13])
-    PT_INJE = bytes([14])
-    PT_COMB = bytes([15])
-    TC1 = bytes([16])
-    TC2 = bytes([17])
-    TC3 = bytes([18])
+    LC_MAIN_SEND = bytes([9])
+    LC1_SEND = bytes([10])
+    LC2_SEND = bytes([11])
+    LC3_SEND = bytes([12])
+    PT_FEED_SEND = bytes([13])
+    PT_INJE_SEND = bytes([14])
+    PT_COMB_SEND = bytes([15])
+    TC1_SEND = bytes([16])
+    TC2_SEND = bytes([17])
+    TC3_SEND = bytes([18])
 
     filenames = {
-        LC1: 'LC1',
-        LC_MAIN: 'LC_MAIN',
-        LC2: 'LC2',
-        LC3: 'LC3',
-        PT_FEED: 'PT_FEED',
-        PT_COMB: 'PT_COMB',
-        PT_INJE: 'PT_INJE',
-        TC1: 'TC1',
-        TC2: 'TC2',
-        TC3: 'TC3'
+        LC1_SEND: 'LC1',
+        LC_MAIN_SEND: 'LC_MAIN',
+        LC2_SEND: 'LC2',
+        LC3_SEND: 'LC3',
+        PT_FEED_SEND: 'PT_FEED',
+        PT_COMB_SEND: 'PT_COMB',
+        PT_INJE_SEND: 'PT_INJE',
+        TC1_SEND: 'TC1',
+        TC2_SEND: 'TC2',
+        TC3_SEND: 'TC3'
     }
 
     calibrations = {
-        LC1: (1, 0),
-        LC_MAIN: (0.1365, -66.885),
-        LC2: (1, 0),
-        LC3: (1, 0),
-        PT_FEED: (-0.34601, 1384.847),
-        PT_COMB: (-0.36002, 1412.207),
-        PT_INJE: (-0.35479, 1379.436),
-        TC1: (0.1611, -250),
-        TC2: (0.1611, -250),
-        TC3: (0.1611, -250)
+        LC1_SEND: (1, 0),
+        LC_MAIN_SEND: (0.1365, -66.885),
+        LC2_SEND: (1, 0),
+        LC3_SEND: (1, 0),
+        PT_FEED_SEND: (-0.34601, 1384.847),
+        PT_COMB_SEND: (-0.36002, 1412.207),
+        PT_INJE_SEND: (-0.35479, 1379.436),
+        TC1_SEND: (0.1611, -250),
+        TC2_SEND: (0.1611, -250),
+        TC3_SEND: (0.1611, -250)
     }
 
     class PiInfo:

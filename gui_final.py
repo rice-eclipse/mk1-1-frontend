@@ -7,7 +7,7 @@ import tkinter.ttk as ttk
 from concurrency import async
 from networking import*
 import matplotlib.animation as animation
-from graph_constants import *
+from gui_constants import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
@@ -240,7 +240,7 @@ class GUIFrontend:
 
         # TODO send the ignition length to the backend when we press the button
         set_ignition_button = tk.ttk.Button(ignition_frame, text="IGNITE",
-                                            command=lambda: backend.send(ServerInfo.SET_IGNITION))
+                                            command=lambda: backend.send(ServerInfo.NORM_IGNITE))
         set_ignition_image = PhotoImage(file="ignite.gif")
         set_ignition_button.config(image=set_ignition_image)
         set_ignition_button.image = set_ignition_image
@@ -291,10 +291,10 @@ class GUIFrontend:
 
     def animate(self, *fargs):
         # Randomly generate some data to plot
-        for queue in self.backend.queues:
-            length = len(queue) - 1
-            for j in range(1, 11):
-                queue.append((random.randint(0, 1000), queue[length][1] + j))
+        # for queue in self.backend.queues:
+            # length = len(queue) - 1
+            # for j in range(1, 11):
+                # queue.append((random.randint(0, 1000), queue[length][1] + j))
             # print (queue)
         # print (self.backend.queues[0][-10:])
 

@@ -78,9 +78,9 @@ class ServerInfo:
         LC_MAIN_SEND: (0.1365, -66.885),
         LC2_SEND: (1, 0),
         LC3_SEND: (1, 0),
-        PT_FEED_SEND: (-0.34601, 1384.847),
-        PT_COMB_SEND: (-0.36002, 1412.207),
-        PT_INJE_SEND: (-0.35479, 1379.436),
+        PT_FEED_SEND: (-0.275787487, 1069),
+        PT_COMB_SEND: (-0.2810327855, 1068),
+        PT_INJE_SEND: (-0.2782331275, 1045),
         TC1_SEND: (0.1611, -250),
         TC2_SEND: (0.1611, -250),
         TC3_SEND: (0.1611, -250)
@@ -147,8 +147,8 @@ class ServerInfo:
             bcount += self.info.payload_bytes
             # TODO handle multiple out queues
 
-            if (mtype in ServerInfo.averages.keys()):
-                ServerInfo.averages[mtype] = 0.5 * ServerInfo.averages[mtype] + 0.5 * d
+            #if (mtype in ServerInfo.averages.keys()):
+            #    ServerInfo.averages[mtype] = 0.5 * ServerInfo.averages[mtype] + 0.5 * d
 
             if (mtype in ServerInfo.calibrations.keys()):
                 calib = ServerInfo.calibrations[mtype]

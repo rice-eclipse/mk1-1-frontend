@@ -36,22 +36,22 @@ data_lengths = {
     "PT_FEED": 500,
     "PT_COMB": 500,
     "PT_INJE": 500,
-    "TC1": 10,
-    "TC2": 10,
-    "TC3": 10,
+    "TC1": 50,
+    "TC2": 50,
+    "TC3": 50,
 }
 
 # Samples to keep is how many samples we actually want to show in the graph
 # See data_ratio in animate() in gui_final
 samples_to_keep = {
-    "LC1": 500,
-    "LC_MAIN": 500,
-    "LC2": 500,
-    "LC3": 500,
-    "PT_FEED": 250,
-    "PT_COMB": 250,
-    "PT_INJE": 250,
-    "TC1": 10,
-    "TC2": 10,
-    "TC3": 10,
+    "LC1": 250,
+    "LC_MAIN": 250,
+    "LC2": 250,
+    "LC3": 250,
+    "PT_FEED": 100,
+    "PT_COMB": 100,
+    "PT_INJE": 100,
+    "TC1": 15,
+    "TC2": 15,
+    "TC3": 15,
 }

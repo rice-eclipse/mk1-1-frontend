@@ -8,6 +8,7 @@ from concurrency import async
 from networking import*
 import matplotlib.animation as animation
 from gui_constants import *
+# from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
@@ -118,6 +119,7 @@ class GUIFrontend:
         self.root = tk.Tk()
         self.root.resizable(False, False)
         self.root.wm_title("Rice Eclipse Mk-1.1 GUI")
+        self.refresh_rate = 1 # In seconds
 
         Pmw.initialise(self.root)
 
@@ -142,16 +144,19 @@ class GUIFrontend:
         s.theme_use("default")
 
         # This figure contains everything to do with matplotlib on the left hand side
-        figure, axes_list = plt.subplots(nrows=2, ncols=2)
+        self.figure, axes_list = plt.subplots(nrows=2, ncols=2)
         self.axes_list = list(axes_list[0]) + list(axes_list[1])
-        figure.subplots_adjust(top=.9, bottom=.1, left=.12, right=.95, wspace=.3, hspace=.5)
-        figure.set_size_inches(8, 6)
-        figure.set_dpi(100)
+        self.figure.subplots_adjust(top=.9, bottom=.1, left=.12, right=.95, wspace=.3, hspace=.5)
+        self.figure.set_size_inches(8, 6)
+        self.figure.set_dpi(100)
 
         # Create a canvas to show this figure under the default tab
-        default_canvas = FigureCanvasTkAgg(figure, master=mission_control)
+        default_canvas = FigureCanvasTkAgg(self.figure, master=mission_control)
         default_canvas.get_tk_widget().grid(row=1, column=1, sticky="NW")
 
+        # time = float(str(datetime.now().time()).split(":")[2])
+        # print(time)
+        # self.last_update = [time, time, time, time]
         self.plots = [axes_list[0][0].plot([0], [0])[0],
                       axes_list[0][1].plot([0], [0])[0],
                       axes_list[1][0].plot([0], [0])[0],
@@ -161,7 +166,7 @@ class GUIFrontend:
 
         self.plot_selections = ["LC_MAIN", "LC1", "TC2", "PT_INJE"]
 
-        self.animation = animation.FuncAnimation(figure, self.animate, interval=500)
+        self.animation = animation.FuncAnimation(self.figure, self.animate, interval=500)
 
         # This frame contains everything to do with buttons and entry boxes on the right hand side
         control_panel = tk.Frame(background="AliceBlue", width=350, height=625)
@@ -194,6 +199,7 @@ class GUIFrontend:
         self.graph_variables = [tk.StringVar(graph_frame), tk.StringVar(graph_frame),
                                 tk.StringVar(graph_frame), tk.StringVar(graph_frame)]
         self.fine_control = tk.BooleanVar(graph_frame)
+        self.set_limits = tk.BooleanVar(graph_frame)
         option_menus = []
 
         for i in range(4):
@@ -207,8 +213,11 @@ class GUIFrontend:
         tk.Label(graph_frame, text="Bot Left", background="AliceBlue").grid(row=3, column=1, sticky="w", padx=10)
         tk.Label(graph_frame, text="Bot Right", background="AliceBlue").grid(row=3, column=2, sticky="w", padx=10)
 
-        tk.ttk.Checkbutton(graph_frame, text="Show All Data", variable=self.fine_control)\
+        tk.ttk.Checkbutton(graph_frame, text="Show All Data", variable=self.fine_control) \
             .grid(row=5, column=1, sticky="w", padx=15, pady=(5, 15))
+
+        tk.ttk.Checkbutton(graph_frame, text="Data Limits", variable=self.set_limits) \
+            .grid(row=5, column=2, sticky="w", padx=15, pady=(5, 15))
 
         graph_frame.grid(row=2, column=1, pady=15)
 
@@ -294,7 +303,7 @@ class GUIFrontend:
         # for queue in self.backend.queues:
             # length = len(queue) - 1
             # for j in range(1, 11):
-                # queue.append((random.randint(0, 1000), queue[length][1] + j))
+                # queue.append((random.randint(0, 30) * 1.123456789, queue[length][1] + j))
             # print (queue)
         # print (self.backend.queues[0][-10:])
 
@@ -305,6 +314,8 @@ class GUIFrontend:
             self.update_log_displays()
 
     def update_graphs(self):
+
+        # time_now = float(str(datetime.now().time()).split(":")[2])
         for i in range(4):
             # Get which graph the user has selected and get the appropriate queue from the backend
             graph_selection = self.graph_variables[i].get()
@@ -315,20 +326,21 @@ class GUIFrontend:
                 data_ratio = 1
             else:
                 data_ratio = int(data_lengths[graph_selection] / samples_to_keep[graph_selection])
-            # print (data_ratio)
 
+            y_data = [cal for cal, t in data_queue[-data_length::data_ratio]]
             self.plots[i].set_xdata([t for cal, t in data_queue[-data_length::data_ratio]])
-            self.plots[i].set_ydata([cal for cal, t in data_queue[-data_length::data_ratio]])
+            self.plots[i].set_ydata(y_data)
 
+            # print(time_now)
+            # if time_now - self.last_update[i] > self.refresh_rate:
             self.axes_list[i].relim()
+            self.axes_list[i].set_ylim(auto=True) # In case ylim was set to a lower value for a different sensor
 
-            # Rescaling the axes is apparently very expensive, so only do it if the data is out of bounds
-            all_y_data = [cal for cal, t in data_queue[-data_length:]]
-            if min(all_y_data) < self.axes_list[i].get_ylim()[0] or \
-                    max(all_y_data) > self.axes_list[i].get_ylim()[1]:
-                self.axes_list[i].autoscale_view(scalex=True, scaley=True)
-            else:
-                self.axes_list[i].autoscale_view(scalex=True, scaley=False)
+            if self.set_limits.get() and max(y_data) > data_limits[graph_selection]:
+                self.axes_list[i].set_ylim(ymax=data_limits[graph_selection])
+
+            self.axes_list[i].autoscale_view()
+            # self.last_update[i] = time_now
 
             # We have to do this even if we don't change graphs because the labels get erased after we scale the axes
             self.axes_list[i].set_title(graph_selection)
@@ -346,7 +358,7 @@ class GUIFrontend:
             for column in range(len(self.choices)):
                 # print(self.choices)
                 data_queue = self.backend.queue_dict[str_to_byte[self.choices[column]]]
-                value = str(data_queue[max(-len(data_queue) + 1, -num_rows + row)][0])
+                value = str(data_queue[max(-len(data_queue) + 1, -num_rows + row)][0])[0:7]
                 # print ("value", value)
                 data_line = data_line + value + ' ' * (10 - len(value))
             data_line = data_line + '\n'
@@ -355,7 +367,7 @@ class GUIFrontend:
         averages = ''
         for column in range(len(self.choices)):
             data_queue = self.backend.queue_dict[str_to_byte[self.choices[column]]]
-            avg = str(sum([cal for cal, t in data_queue[-num_rows:]]) / num_rows)
+            avg = str(sum([cal for cal, t in data_queue[-num_rows:]]) / num_rows)[0:7]
             # data = str(average)[:9]
             # data = '%-7s' % (data,)
             averages = averages + avg + ' ' * (10 - len(avg))

@@ -13,6 +13,19 @@ labels = {
     "TC3": ("Time(s)", "Temperature (C)"),
 }
 
+data_limits = {
+    "LC1": 10,
+    "LC_MAIN": 50,
+    "LC2": 10,
+    "LC3": 10,
+    "PT_FEED": 900,
+    "PT_COMB": 600,
+    "PT_INJE": 500,
+    "TC1": 50,
+    "TC2": 50,
+    "TC3": 50,
+}
+
 str_to_byte = {
     'LC1': ServerInfo.LC1_SEND,
     'LC_MAIN': ServerInfo.LC_MAIN_SEND,
@@ -45,13 +58,13 @@ data_lengths = {
 # See data_ratio in animate() in gui_final
 samples_to_keep = {
     "LC1": 250,
-    "LC_MAIN": 250,
+    "LC_MAIN": 500,
     "LC2": 250,
     "LC3": 250,
     "PT_FEED": 100,
     "PT_COMB": 100,
     "PT_INJE": 100,
-    "TC1": 15,
-    "TC2": 15,
-    "TC3": 15,
+    "TC1": 25,
+    "TC2": 25,
+    "TC3": 25,
 }

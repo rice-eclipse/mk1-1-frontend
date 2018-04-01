@@ -230,6 +230,9 @@ class GUIFrontend:
         tk.ttk.Button(valve_frame, text="Unset Valve", command=lambda: backend.send(ServerInfo.UNSET_VALVE))\
             .grid(row=1, column=2, padx=15, pady=10)
 
+        tk.ttk.Button(valve_frame, text="GITVC", command=lambda: backend.send(ServerInfo.GITVC))\
+            .grid(row=2, column=1, padx=15, pady=10)
+
         valve_frame.grid(row=3, column=1, pady=15)
 
         # Frame for ignition

@@ -35,6 +35,7 @@ class ServerInfo:
     TC1_SEND = bytes([16])
     TC2_SEND = bytes([17])
     TC3_SEND = bytes([18])
+    GITVC = bytes([21])
 
     filenames = {
         LC1_SEND: 'LC1',

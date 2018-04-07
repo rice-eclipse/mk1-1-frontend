@@ -2,6 +2,8 @@
 
 # Information on the values of headers sent:
 import csv
+import struct
+
 
 class ServerInfo:
     """
@@ -12,32 +14,6 @@ class ServerInfo:
         self.on_pi = True
         self.info = ServerInfo.PiInfo
         pass
-
-    def int_from_net_bytes(self, b):
-        """
-        Converts a bytearray received from the network to an integer type 2 or 4 bytes.
-        :param b: A bytearray
-        :return: A 2 or 4 byte int.
-        """
-        if len(b) == 4:
-            i = int.from_bytes(b, self.info.byteorder)
-            # TODO need to check if my computer and raspberry pi differ in endianness.
-            # Really hacky if this is the fix.
-            # print("4 byte int:" + str(i))
-            return i  # socket.ntohl(i)
-        if len(b) == 2:
-            i = int.from_bytes(b, self.info.byteorder)
-            # print("2 byte int:" + str(i))
-            return i  # socket.ntohs(i)
-
-        if (len(b) == 8):
-            i = int.from_bytes(b, self.info.byteorder)
-            # NO 8 byte byteswap, which is an annoying problem.
-            # Not sure if we need it at all however.
-            # print("8 byte int:" + str(i))
-            return i
-
-        return None
 
     ACK_VALUE = bytes([1])
     PAYLOAD = bytes([2])
@@ -87,7 +63,7 @@ class ServerInfo:
     }
 
     class PiInfo:
-        byteorder='little'
+        byteorder = 'little'
 
         header_type_bytes = 1
         header_nbytes_offset = 4
@@ -102,7 +78,7 @@ class ServerInfo:
         payload_bytes = 16
 
     class OtherInfo:
-        byteorder='little'
+        byteorder = 'little'
 
         header_type_bytes = 1
         header_nbytes_offset = 8
@@ -116,59 +92,36 @@ class ServerInfo:
         payload_time_offset = 8
         payload_bytes = 16
 
-    def payload_from_bytes(self, b):
-        assert len(b) == self.info.payload_bytes
-
-        data = b[:self.info.payload_data_bytes]
-        data = self.int_from_net_bytes(data)
-
-        t = b[self.info.payload_time_offset:self.info.payload_time_offset + self.info.payload_time_bytes]
-        t = self.int_from_net_bytes(t)
-
-        return data, t
 
     def read_payload(self, b, nbytes, out_queue, mtype=None):
         assert nbytes % self.info.payload_bytes == 0
 
-        #print(mtype, mtype in ServerInfo.filenames.keys())
-        #print(ServerInfo.filenames.keys())
-
         if (mtype != None and mtype in ServerInfo.filenames.keys()):
             save_file = open('logs/' + ServerInfo.filenames[mtype] + '.log', 'a+')
             writer = csv.writer(save_file, delimiter=" ")
-            #print("Starting logger for message")
+            # print("Starting logger for message")
         else:
             save_file = None
             writer = None
 
         bcount = 0
         while bcount < nbytes:
-            d, t = self.payload_from_bytes(b[bcount: bcount + self.info.payload_bytes])
+            # d, t = self.payload_from_bytes(b[bcount: bcount + self.info.payload_bytes])
+            d, t = struct.unpack("2Q", b[bcount: bcount + self.info.payload_bytes])
             bcount += self.info.payload_bytes
             # TODO handle multiple out queues
 
-            #if (mtype in ServerInfo.averages.keys()):
-            #    ServerInfo.averages[mtype] = 0.5 * ServerInfo.averages[mtype] + 0.5 * d
-
-            if (mtype in ServerInfo.calibrations.keys()):
+            if mtype in ServerInfo.calibrations.keys():
                 calib = ServerInfo.calibrations[mtype]
                 cal = d * calib[0] + calib[1]
             else:
                 cal = 0
 
-            if (save_file != None):
+            if save_file != None:
                 writer.writerow([str(t), str(d), str(cal)])
-            if (out_queue is not None):
+            if out_queue is not None:
                 out_queue.append((cal, t))
                 # out_queue.put((cal, t))
 
         if (save_file is not None):
             save_file.close()
-
-    def decode_header(self, b):
-        htype = b[:self.info.header_type_bytes]
-
-        #print(htype)
-        nbytesb = b[self.info.header_nbytes_offset: self.info.header_nbytes_offset + self.info.header_nbytes_info]
-
-        return htype, self.int_from_net_bytes(nbytesb)

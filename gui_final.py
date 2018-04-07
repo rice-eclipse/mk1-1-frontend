@@ -10,6 +10,7 @@ import matplotlib.animation as animation
 from gui_constants import *
 # from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from config import config
 
 
 class GUIBackend:
@@ -178,11 +179,11 @@ class GUIFrontend:
         tk.ttk.Label(network_frame, text="port", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
 
         ip_entry = tk.ttk.Entry(network_frame, width=15)
-        ip_entry.insert(tk.END, '192.168.1.137')
+        ip_entry.insert(tk.END, config.get("UI Defaults","Address"))
         ip_entry.grid(row=2, column=1, padx=15)
 
         port_entry = tk.ttk.Entry(network_frame, width=5)
-        port_entry.insert(tk.END, '1234')
+        port_entry.insert(tk.END, config.get("UI Defaults","Port"))
         port_entry.grid(row=2, column=2, padx=15, sticky="w")
 
         tk.ttk.Button(network_frame, text="Connect", command=lambda: backend.connect(ip_entry.get(), port_entry.get()))\

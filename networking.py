@@ -11,6 +11,7 @@ import time
 
 from logger import LogLevel, Logger
 from server_info import*
+from config import config
 
 # MAJOR TODO move this networker to processing requests on its own thread and then let it attempt reconnection.
 class Networker:
@@ -38,14 +39,18 @@ class Networker:
 
     @staticmethod
     def make_socket():
-        sock = socket.socket()
-        # 50ms timeout, with the intent of giving just a bit of time if receiving.
-        sock.settimeout(1)
+        tcp_sock = socket.socket()
+        udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        return sock
+         # 50ms timeout, with the intent of giving just a bit of time if receiving.
+        tcp_sock.settimeout(1)
+        udp_sock.settimeout(1)
+
+        return tcp_sock, udp_sock
 
     def __init__(self, queue=None, loglevel = LogLevel.DEBUG):
-        self.sock = self.make_socket()
+        self.tcp_sock,self.udp_sock = self.make_socket()
+        self.recv_sock = None
         self.addr = None
         self.port = None
         self.connected = False
@@ -94,7 +99,12 @@ class Networker:
         self.trying_connect = True
         while self.trying_connect:
             try:
-                self.sock.connect((self.addr, int(self.port)))
+                self.tcp_sock.connect((self.addr, int(self.port)))
+                if (config.get("Server","Protocol") == "UDP"):
+                    self.udp_sock.bind(('', int(self.port)))
+                    self.recv_sock = self.udp_sock
+                else:
+                    self.recv_sock = self.tcp_sock
             except socket.timeout:
                 self.logger.error("Connect timed out.")
             except OSError as e:
@@ -122,10 +132,12 @@ class Networker:
         self.conn_event.clear()
         self.connected = False
         self.logger.warn("Socket disconnecting:")
-        self.sock.close()
+        self.tcp_sock.close()
+        self.udp_sock.close()
+        self.recv_sock = None
 
         # Recreate the socket so that we aren't screwed.
-        self.sock = self.make_socket()
+        self.tcp_sock,self.udp_sock = self.make_socket()
 
     def send(self, message):
         """
@@ -209,7 +221,7 @@ class Networker:
         bcount = 0
         try:
             while nbytes > 0:
-                b = self.sock.recv(nbytes)
+                b = self.recv_sock.recv(nbytes)
                 nbytes -= len(b)
                 bcount += len(b)
                 outb += b
@@ -217,6 +229,7 @@ class Networker:
             if bcount > 0:
                 #TODO fix this.
                 self.logger.error("Socket timed out during partial read. Major problem.")
+            self.logger.error("Socket timed out.")
         except OSError as e:
             self.logger.error("Read failed. OSError:" + e.strerror)
         except:

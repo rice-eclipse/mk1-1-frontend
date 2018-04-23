@@ -149,7 +149,7 @@ class Networker:
         self.logger.debug("Sending message:")
         # TODO proper error handling?
         try:
-            self.sock.send(message)
+            self.tcp_sock.send(message)
         except socket.timeout:
             self.logger.error("Socket timed out while sending")
             self.disconnect()

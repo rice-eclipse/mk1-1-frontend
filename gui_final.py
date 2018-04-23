@@ -122,6 +122,8 @@ class GUIFrontend:
         self.root.wm_title("Rice Eclipse Mk-1.1 GUI")
         self.refresh_rate = 1 # In seconds
 
+#        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
         Pmw.initialise(self.root)
 
         # Create a notebook and the tabs
@@ -155,9 +157,6 @@ class GUIFrontend:
         default_canvas = FigureCanvasTkAgg(self.figure, master=mission_control)
         default_canvas.get_tk_widget().grid(row=1, column=1, sticky="NW")
 
-        # time = float(str(datetime.now().time()).split(":")[2])
-        # print(time)
-        # self.last_update = [time, time, time, time]
         self.plots = [axes_list[0][0].plot([0], [0])[0],
                       axes_list[0][1].plot([0], [0])[0],
                       axes_list[1][0].plot([0], [0])[0],
@@ -304,7 +303,8 @@ class GUIFrontend:
         # for queue in self.backend.queues:
             # length = len(queue) - 1
             # for j in range(1, 11):
-                # queue.append((random.randint(0, 30) * 1.123456789, queue[length][1] + j))
+                # queue.append((random.randint(0, 1000), queue[length][1] + j))
+                # queue.append((queue[length][1] + j, queue[length][1] + j))
             # print (queue)
         # print (self.backend.queues[0][-10:])
 
@@ -315,8 +315,6 @@ class GUIFrontend:
             self.update_log_displays()
 
     def update_graphs(self):
-
-        # time_now = float(str(datetime.now().time()).split(":")[2])
         for i in range(4):
             # Get which graph the user has selected and get the appropriate queue from the backend
             graph_selection = self.graph_variables[i].get()
@@ -327,6 +325,7 @@ class GUIFrontend:
                 data_ratio = 1
             else:
                 data_ratio = int(data_lengths[graph_selection] / samples_to_keep[graph_selection])
+            # print (data_ratio)
 
             y_data = [cal for cal, t in data_queue[-data_length::data_ratio]]
             self.plots[i].set_xdata([t for cal, t in data_queue[-data_length::data_ratio]])
@@ -349,6 +348,11 @@ class GUIFrontend:
             self.axes_list[i].set_ylabel(labels[graph_selection][1])
 
             self.plot_selections[i] = graph_selection
+
+    # def on_closing(self):
+    #     if messagebox.askokcancel("Quit", "Do you want to quit?"):
+    #         self.root.destroy()
+	 #    self.root.quit()
 
     def update_log_displays(self):
         self.st.clear()
@@ -387,3 +391,6 @@ class GUIFrontend:
 
 frontend = GUIFrontend(GUIBackend([], [], [], [], [], [], [], [], [], []))
 frontend.root.mainloop()
+# Forces all threads to close
+# os._exit(1)
+# todo I merged Cody's stuff poorly and it doesn't work lol

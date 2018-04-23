@@ -203,7 +203,8 @@ class Networker:
         if (len(b) == 0):
             return None, None
 
-        htype, nbytes = struct.unpack("c7xi4x", b)
+        htype, nbytes = struct.unpack(self.server_info.info.header_format_string, b)
+        # htype, nbytes = struct.unpack("c7xi4x", b)
         # htype, nbytes = self.server_info.decode_header(b)
         #print(htype)
 

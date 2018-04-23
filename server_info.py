@@ -3,6 +3,7 @@
 # Information on the values of headers sent:
 import csv
 import struct
+from config import config
 
 
 class ServerInfo:
@@ -49,6 +50,10 @@ class ServerInfo:
         TC3_SEND: 'TC3'
     }
 
+    c = config.get("Calibration", "LC1_SEND").split(",")
+    print(tuple(c))
+
+
     calibrations = {
         LC1_SEND: (1, 0),
         LC_MAIN_SEND: (0.1365, -66.885),
@@ -77,6 +82,8 @@ class ServerInfo:
         payload_time_offset = 8
         payload_bytes = 16
 
+        header_format_string = "c3xi"
+
     class OtherInfo:
         byteorder = 'little'
 
@@ -91,6 +98,8 @@ class ServerInfo:
         payload_time_bytes = 8
         payload_time_offset = 8
         payload_bytes = 16
+
+        header_format_string = "c7xi4x"
 
 
     def read_payload(self, b, nbytes, out_queue, mtype=None):
@@ -108,6 +117,7 @@ class ServerInfo:
         while bcount < nbytes:
             # d, t = self.payload_from_bytes(b[bcount: bcount + self.info.payload_bytes])
             d, t = struct.unpack("2Q", b[bcount: bcount + self.info.payload_bytes])
+
             bcount += self.info.payload_bytes
             # TODO handle multiple out queues
 

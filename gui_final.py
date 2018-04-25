@@ -10,6 +10,8 @@ import matplotlib.animation as animation
 from gui_constants import *
 # from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.transforms import Bbox, BboxBase
+from matplotlib.ticker import AutoLocator
 from config import config
 
 
@@ -147,26 +149,32 @@ class GUIFrontend:
         s.theme_use("default")
 
         # This figure contains everything to do with matplotlib on the left hand side
-        self.figure, axes_list = plt.subplots(nrows=2, ncols=2)
-        self.axes_list = list(axes_list[0]) + list(axes_list[1])
+        self.figure, self.axes_list = plt.subplots(nrows=2, ncols=2)
+        self.axes_list = self.axes_list.flatten()
         self.figure.subplots_adjust(top=.9, bottom=.1, left=.12, right=.95, wspace=.3, hspace=.5)
         self.figure.set_size_inches(8, 6)
         self.figure.set_dpi(100)
 
-        # Create a canvas to show this figure under the default tab
-        default_canvas = FigureCanvasTkAgg(self.figure, master=mission_control)
-        default_canvas.get_tk_widget().grid(row=1, column=1, sticky="NW")
+        #for al in self.axes_list:
+        #    al.set_animated(True)
 
-        self.plots = [axes_list[0][0].plot([0], [0])[0],
-                      axes_list[0][1].plot([0], [0])[0],
-                      axes_list[1][0].plot([0], [0])[0],
-                      axes_list[1][1].plot([0], [0])[0]]
+        # Create a canvas to show this figure under the default tab
+        self.canvas = FigureCanvasTkAgg(self.figure, master=mission_control)
+        self.canvas.get_tk_widget().grid(row=1, column=1, sticky="NW")
+
+        self.frame_count = 0
+
+        # time = float(str(datetime.now().time()).split(":")[2])
+        # print(time)
+        # self.last_update = [time, time, time, time]
+        self.plots = [self.axes_list[0].plot([0], [0])[0],
+                      self.axes_list[1].plot([0], [0])[0],
+                      self.axes_list[2].plot([0], [0])[0],
+                      self.axes_list[3].plot([0], [0])[0]]
 
         # plt.setp(self.plots[0], aa=True)
 
         self.plot_selections = ["LC_MAIN", "LC1", "TC2", "PT_INJE"]
-
-        self.animation = animation.FuncAnimation(self.figure, self.animate, interval=500)
 
         # This frame contains everything to do with buttons and entry boxes on the right hand side
         control_panel = tk.Frame(background="AliceBlue", width=350, height=625)
@@ -310,21 +318,70 @@ class GUIFrontend:
 
         self.log_output.grid(row=2, column=1)
 
+
+        #plt.show()
+        self.canvas.draw()
+        self.frame_delay_ms = round(1000/int(config.get("Display","Target Framerate")))
+        if (config.get("Display","Use matplotlib Animation") == "True"):
+            blit = config.get("Display","Blit") == "True"
+            self.animation = animation.FuncAnimation(self.figure, self.animate, interval=self.frame_delay_ms, blit=blit)
+        else:
+            tmp_xtick = []
+            for i in range(4):
+                #tmp_xtick.append(self.axes_list[i].get_xticklabels())
+                self.axes_list[i].set_yticks([])
+                self.axes_list[i].set_xticks([])
+            self.canvas.draw()
+            for i in range(4):
+                #tmp_xtick.append(self.axes_list[i].get_xticklabels())
+                self.axes_list[i].xaxis.set_major_locator(AutoLocator())
+                self.axes_list[i].yaxis.set_major_locator(AutoLocator())
+            #self.axes_list[0].set_xticklabels(tmp_xtick[0])
+            [width, height]= self.canvas.get_width_height()
+            self.graphArea = self.canvas.copy_from_bbox(Bbox.from_bounds(0, 0, width, height))
+            #self.graphArea = self.canvas.copy_from_bbox(self.plots[0].axes.bbox)
+            #print(self.plots[0].axes.bbox)
+            #print(self.plots[1].axes.bbox)
+            self.root.after(0,self.draw_graphs())
+
+
     def animate(self, *fargs):
         # Randomly generate some data to plot
-        # for queue in self.backend.queues:
-            # length = len(queue) - 1
-            # for j in range(1, 11):
-                # queue.append((random.randint(0, 1000), queue[length][1] + j))
-                # queue.append((queue[length][1] + j, queue[length][1] + j))
+        for queue in self.backend.queues:
+            length = len(queue) - 1
+            for j in range(1, 11):
+                queue.append((random.randint(0, 1000), queue[length][1] + j))
+                #queue.append((queue[length][1] + j, queue[length][1] + j))
             # print (queue)
         # print (self.backend.queues[0][-10:])
 
         # Only graph if we are on the mission control tab
         if self.notebook.index(self.notebook.select()) == 0:
-            self.update_graphs()
+            return self.update_graphs()
         elif self.notebook.index(self.notebook.select()) == 1:
             self.update_log_displays()
+
+    def draw_graphs(self):
+        self.animate()
+        self.canvas.restore_region(self.graphArea)
+        self.frame_count = self.frame_count + 1
+        if self.frame_count == 20:
+            self.frame_count = 0
+            update_axes = True
+        else:
+            update_axes = False
+        for i in range(4):
+            #plt.draw()
+            #self.canvas.draw()
+            self.plots[i].axes.draw_artist(self.plots[i])
+            if update_axes:
+                self.plots[i].axes.draw_artist(self.axes_list[i].get_xaxis())
+                self.plots[i].axes.draw_artist(self.axes_list[i].get_yaxis())
+
+                self.canvas.blit(self.plots[i].axes.clipbox)
+            else:
+                self.canvas.blit(self.plots[i].axes.bbox)
+        self.root.after(self.frame_delay_ms,self.draw_graphs)
 
     def update_graphs(self):
         for i in range(4):
@@ -360,6 +417,7 @@ class GUIFrontend:
             self.axes_list[i].set_ylabel(labels[graph_selection][1])
 
             self.plot_selections[i] = graph_selection
+        return self.plots[1],self.plots[2],self.plots[3],self.plots[0],
 
     # def on_closing(self):
     #     if messagebox.askokcancel("Quit", "Do you want to quit?"):

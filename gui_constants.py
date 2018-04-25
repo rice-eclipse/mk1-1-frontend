@@ -57,10 +57,10 @@ data_lengths = {
 # Samples to keep is how many samples we actually want to show in the graph
 # See data_ratio in animate() in gui_final
 samples_to_keep = {
-    "LC1": 250,
+    "LC1": 200,
     "LC_MAIN": 500,
-    "LC2": 250,
-    "LC3": 250,
+    "LC2": 200,
+    "LC3": 200,
     "PT_FEED": 100,
     "PT_COMB": 100,
     "PT_INJE": 100,

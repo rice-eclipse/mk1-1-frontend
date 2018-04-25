@@ -190,7 +190,7 @@ class GUIFrontend:
         tk.ttk.Button(network_frame, text="Disconnect", command=lambda: backend.nw.disconnect()) \
             .grid(row=3, column=2, pady=(15, 10), padx=15)
 
-        network_frame.grid(row=1, column=1, pady=(7, 20))
+        network_frame.grid(row=1, column=1, pady=(7, 10))
 
         # Frame for selection of graphs
         graph_frame = tk.LabelFrame(control_panel, text="Graphs", background="AliceBlue")
@@ -219,7 +219,7 @@ class GUIFrontend:
         tk.ttk.Checkbutton(graph_frame, text="Data Limits", variable=self.set_limits) \
             .grid(row=5, column=2, sticky="w", padx=15, pady=(5, 15))
 
-        graph_frame.grid(row=2, column=1, pady=15)
+        graph_frame.grid(row=2, column=1, pady=10)
 
         # Frame for controlling the valves
         valve_frame = tk.LabelFrame(control_panel, text="Valve", background="AliceBlue")
@@ -230,7 +230,13 @@ class GUIFrontend:
         tk.ttk.Button(valve_frame, text="Unset Valve", command=lambda: backend.send(ServerInfo.UNSET_VALVE))\
             .grid(row=1, column=2, padx=15, pady=10)
 
-        valve_frame.grid(row=3, column=1, pady=15)
+        tk.ttk.Button(valve_frame, text="Water", command=lambda: backend.send(ServerInfo.SET_WATER)) \
+            .grid(row=2, column=1, padx=15, pady=10)
+
+        tk.ttk.Button(valve_frame, text="End Water", command=lambda: backend.send(ServerInfo.UNSET_WATER)) \
+            .grid(row=2, column=2, padx=15, pady=10)
+
+        valve_frame.grid(row=3, column=1, pady=10)
 
         # Frame for ignition
         ignition_frame = tk.LabelFrame(control_panel, text="Ignition", background="AliceBlue")
@@ -262,7 +268,7 @@ class GUIFrontend:
         unset_ignition_button.image = unset_ignition_image
         unset_ignition_button.grid(row=3, column=2, padx=15, pady=10)
 
-        ignition_frame.grid(row=4, column=1, pady=(20, 10))
+        ignition_frame.grid(row=4, column=1, pady=15)
 
         self.st = Pmw.ScrolledText(logging,
                                    columnheader=1,

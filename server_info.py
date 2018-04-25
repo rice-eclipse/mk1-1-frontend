@@ -36,6 +36,8 @@ class ServerInfo:
     TC1_SEND = bytes([16])
     TC2_SEND = bytes([17])
     TC3_SEND = bytes([18])
+    SET_WATER = bytes([19])
+    UNSET_WATER = bytes([20])
 
     filenames = {
         LC1_SEND: 'LC1',
@@ -54,11 +56,24 @@ class ServerInfo:
     print(tuple(c))
 
 
+    # calibrations = {
+    #     LC1_SEND: (1, 0),
+    #     LC_MAIN_SEND: (0.1365, -66.885),
+    #     LC2_SEND: (1, 0),
+    #     LC3_SEND: (1, 0),
+    #     PT_FEED_SEND: (-0.275787487, 1069),
+    #     PT_COMB_SEND: (-0.2810327855, 1068),
+    #     PT_INJE_SEND: (-0.2782331275, 1045),
+    #     TC1_SEND: (0.1611, -250),
+    #     TC2_SEND: (0.1611, -250),
+    #     TC3_SEND: (0.1611, -250)
+    # }
+
     calibrations = {
-        LC1_SEND: (1, 0),
-        LC_MAIN_SEND: (0.1365, -66.885),
-        LC2_SEND: (1, 0),
-        LC3_SEND: (1, 0),
+        LC1_SEND: (.0032355, -6.45),
+        LC_MAIN_SEND: (-.03159, 105),
+        LC2_SEND: (-.00341, 9.13),
+        LC3_SEND: (.003305, -6.55),
         PT_FEED_SEND: (-0.275787487, 1069),
         PT_COMB_SEND: (-0.2810327855, 1068),
         PT_INJE_SEND: (-0.2782331275, 1045),

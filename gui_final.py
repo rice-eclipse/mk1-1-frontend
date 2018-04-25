@@ -362,6 +362,7 @@ class GUIFrontend:
             self.update_log_displays()
 
     def draw_graphs(self):
+        self.root.after(self.frame_delay_ms,self.draw_graphs)
         self.animate()
         self.canvas.restore_region(self.graphArea)
         self.frame_count = self.frame_count + 1
@@ -381,7 +382,6 @@ class GUIFrontend:
                 self.canvas.blit(self.plots[i].axes.clipbox)
             else:
                 self.canvas.blit(self.plots[i].axes.bbox)
-        self.root.after(self.frame_delay_ms,self.draw_graphs)
 
     def update_graphs(self):
         for i in range(4):

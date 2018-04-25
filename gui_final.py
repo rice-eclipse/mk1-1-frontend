@@ -163,6 +163,7 @@ class GUIFrontend:
         self.canvas.get_tk_widget().grid(row=1, column=1, sticky="NW")
 
         self.frame_count = 0
+        self.frames_to_skip = int(config.get("Display","Skip Frames for Axis Update"))
 
         # time = float(str(datetime.now().time()).split(":")[2])
         # print(time)
@@ -366,7 +367,7 @@ class GUIFrontend:
         self.animate()
         self.canvas.restore_region(self.graphArea)
         self.frame_count = self.frame_count + 1
-        if self.frame_count == 20:
+        if self.frame_count == self.frames_to_skip or self.frames_to_skip == 0:
             self.frame_count = 0
             update_axes = True
         else:
@@ -378,10 +379,10 @@ class GUIFrontend:
             if update_axes:
                 self.plots[i].axes.draw_artist(self.axes_list[i].get_xaxis())
                 self.plots[i].axes.draw_artist(self.axes_list[i].get_yaxis())
-
-                self.canvas.blit(self.plots[i].axes.clipbox)
             else:
                 self.canvas.blit(self.plots[i].axes.bbox)
+        if update_axes:
+            self.canvas.blit(self.plots[0].axes.clipbox)
 
     def update_graphs(self):
         for i in range(4):

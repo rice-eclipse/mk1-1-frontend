@@ -38,6 +38,8 @@ class ServerInfo:
     TC3_SEND = bytes([18])
     SET_WATER = bytes([19])
     UNSET_WATER = bytes([20])
+    SET_GITVC = bytes([21])
+    UNSET_GITVC = bytes([22])
 
     filenames = {
         LC1_SEND: 'LC1',

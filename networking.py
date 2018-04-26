@@ -231,11 +231,14 @@ class Networker:
             if bcount > 0:
                 #TODO fix this.
                 self.logger.error("Socket timed out during partial read. Major problem.")
-            self.logger.error("Socket timed out.")
+            self.logger.error("Socket timed out. Trying to disconnect")
+            self.disconnect()
         except OSError as e:
             self.logger.error("Read failed. OSError:" + e.strerror)
+            self.disconnect()
         except:
             self.logger.error("Read: Unexpected error:" + str(sys.exc_info()[0]))
+            self.disconnect()
         else:
             return outb
 

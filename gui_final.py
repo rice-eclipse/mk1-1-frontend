@@ -236,22 +236,28 @@ class GUIFrontend:
         tk.ttk.Button(valve_frame, text="End Water", command=lambda: backend.send(ServerInfo.UNSET_WATER)) \
             .grid(row=2, column=2, padx=15, pady=10)
 
+        tk.ttk.Button(valve_frame, text="GITVC", command=lambda: backend.send(ServerInfo.SET_GITVC)) \
+            .grid(row=3, column=1, padx=15, pady=10)
+
+        tk.ttk.Button(valve_frame, text="END_GITVC", command=lambda: backend.send(ServerInfo.UNSET_GITVC)) \
+            .grid(row=3, column=2, padx=15, pady=10)
+
         valve_frame.grid(row=3, column=1, pady=10)
 
         # Frame for ignition
         ignition_frame = tk.LabelFrame(control_panel, text="Ignition", background="AliceBlue")
 
-        tk.ttk.Label(ignition_frame, text="Burn Time", background="AliceBlue")\
-            .grid(row=1, column=1, sticky="w", padx=15)
-        tk.ttk.Label(ignition_frame, text="Delay", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
-
-        self.burn_entry = tk.ttk.Entry(ignition_frame, width=6)
-        self.burn_entry.insert(tk.END, '3')
-        self.burn_entry.grid(row=2, column=1, padx=15, sticky="w")
-
-        self.delay_entry = tk.ttk.Entry(ignition_frame, width=6)
-        self.delay_entry.insert(tk.END, '0.5')
-        self.delay_entry.grid(row=2, column=2, padx=15, sticky="w")
+        # tk.ttk.Label(ignition_frame, text="Burn Time", background="AliceBlue")\
+        #     .grid(row=1, column=1, sticky="w", padx=15)
+        # tk.ttk.Label(ignition_frame, text="Delay", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
+        #
+        # self.burn_entry = tk.ttk.Entry(ignition_frame, width=6)
+        # self.burn_entry.insert(tk.END, '3')
+        # self.burn_entry.grid(row=2, column=1, padx=15, sticky="w")
+        #
+        # self.delay_entry = tk.ttk.Entry(ignition_frame, width=6)
+        # self.delay_entry.insert(tk.END, '0.5')
+        # self.delay_entry.grid(row=2, column=2, padx=15, sticky="w")
 
         # TODO send the ignition length to the backend when we press the button
         set_ignition_button = tk.ttk.Button(ignition_frame, text="IGNITE",

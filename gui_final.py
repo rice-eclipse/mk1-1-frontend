@@ -347,11 +347,11 @@ class GUIFrontend:
 
 
     def animate(self, *fargs):
-        # Randomly generate some data to plot
-        for queue in self.backend.queues:
-            length = len(queue) - 1
-            for j in range(1, 11):
-                queue.append((random.randint(0, 1000), queue[length][1] + j))
+        # # Randomly generate some data to plot
+        # for queue in self.backend.queues:
+        #     length = len(queue) - 1
+        #     for j in range(1, 11):
+        #         queue.append((random.randint(0, 1000), queue[length][1] + j))
                 #queue.append((queue[length][1] + j, queue[length][1] + j))
             # print (queue)
         # print (self.backend.queues[0][-10:])
@@ -464,4 +464,3 @@ frontend = GUIFrontend(GUIBackend([], [], [], [], [], [], [], [], [], []))
 frontend.root.mainloop()
 # Forces all threads to close
 # os._exit(1)
-# todo I merged Cody's stuff poorly and it doesn't work lol

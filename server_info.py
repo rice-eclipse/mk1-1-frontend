@@ -24,8 +24,6 @@ class ServerInfo:
     UNSET_IGNITION = bytes([6])
     SET_IGNITION = bytes([7])
     NORM_IGNITE = bytes([8])
-    HALF_SEC_IGNITE = bytes([19])
-    THREEQ_SEC_IGNITE = bytes([20])
     LC_MAIN_SEND = bytes([9])
     LC1_SEND = bytes([10])
     LC2_SEND = bytes([11])
@@ -72,13 +70,13 @@ class ServerInfo:
     # }
 
     calibrations = {
-        LC1_SEND: (.0032355, -6.45),
         LC_MAIN_SEND: (-.03159, 105),
-        LC2_SEND: (-.00341, 9.13),
-        LC3_SEND: (.003305, -6.55),
-        PT_FEED_SEND: (-0.2822967478, 1067),
-        PT_COMB_SEND: (-0.2820505681, 1064),
-        PT_INJE_SEND: (-0.2799100558, 1055),
+        LC1_SEND: (.0093895, 0),
+        LC2_SEND: (-.0092222, 0),
+        LC3_SEND: (.0097715, 0),
+        PT_FEED_SEND: (-0.275787487, 1069),
+        PT_COMB_SEND: (-0.2810327855, 1068),
+        PT_INJE_SEND: (-0.2782331275, 1045),
         TC1_SEND: (0.1611, -250),
         TC2_SEND: (0.1611, -250),
         TC3_SEND: (0.1611, -250)

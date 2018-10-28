@@ -152,7 +152,7 @@ class GUIFrontend:
         self.figure, self.axes_list = plt.subplots(nrows=2, ncols=2)
         self.axes_list = self.axes_list.flatten()
         self.figure.subplots_adjust(top=.9, bottom=.1, left=.12, right=.95, wspace=.3, hspace=.5)
-        self.figure.set_size_inches(8, 6)
+        self.figure.set_size_inches(8, 6.44)
         self.figure.set_dpi(100)
 
         #for al in self.axes_list:

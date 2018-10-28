@@ -43,8 +43,8 @@ class Networker:
         udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
          # 50ms timeout, with the intent of giving just a bit of time if receiving.
-        tcp_sock.settimeout(1)
-        udp_sock.settimeout(1)
+        tcp_sock.settimeout(5)
+        udp_sock.settimeout(5)
 
         return tcp_sock, udp_sock
 
@@ -103,10 +103,13 @@ class Networker:
                 if (config.get("Server","Protocol") == "UDP"):
                     self.udp_sock.bind(('', int(self.port)))
                     self.recv_sock = self.udp_sock
+                    self.logger.error("Receiving on UDP")
                 else:
                     self.recv_sock = self.tcp_sock
+                    self.logger.error("Receiving on TCP")
             except socket.timeout:
                 self.logger.error("Connect timed out.")
+                sys.exit(0)
             except OSError as e:
                 self.logger.error("Connection failed. OSError:" + e.strerror)
                 self.trying_connect = False
@@ -115,7 +118,7 @@ class Networker:
                 self.trying_connect = False
             else:
                 self.update_server_info(self.addr)
-                self.logger.error("Successfully connected. Using info" + self.server_info.info.__name__)
+                self.logger.error("Successfully connected. Using info " + self.server_info.info.__name__)
                 self.trying_connect = False
                 self.connected = True
                 # TODO make this variable not some hacky global.
@@ -149,7 +152,7 @@ class Networker:
         self.logger.debug("Sending message:")
         # TODO proper error handling?
         try:
-            self.sock.send(message)
+            self.tcp_sock.send(message)
         except socket.timeout:
             self.logger.error("Socket timed out while sending")
             self.disconnect()
@@ -203,7 +206,8 @@ class Networker:
         if (len(b) == 0):
             return None, None
 
-        htype, nbytes = struct.unpack("c7xi4x", b)
+        htype, nbytes = struct.unpack(self.server_info.info.header_format_string, b)
+        # htype, nbytes = struct.unpack("c7xi4x", b)
         # htype, nbytes = self.server_info.decode_header(b)
         #print(htype)
 
@@ -230,11 +234,16 @@ class Networker:
             if bcount > 0:
                 #TODO fix this.
                 self.logger.error("Socket timed out during partial read. Major problem.")
-            self.logger.error("Socket timed out.")
+
+            self.logger.error("Socket timed out. Trying to disconnect")
+            self.disconnect()
+
         except OSError as e:
             self.logger.error("Read failed. OSError:" + e.strerror)
+            self.disconnect()
         except:
             self.logger.error("Read: Unexpected error:" + str(sys.exc_info()[0]))
+            self.disconnect()
         else:
             return outb
 

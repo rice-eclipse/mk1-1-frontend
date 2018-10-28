@@ -245,10 +245,10 @@ class GUIFrontend:
         tk.ttk.Button(valve_frame, text="End Water", command=lambda: backend.send(ServerInfo.UNSET_WATER)) \
             .grid(row=2, column=2, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="Set GITVC", command=lambda: backend.send(ServerInfo.SET_GITVC))\
+        tk.ttk.Button(valve_frame, text="GITVC", command=lambda: backend.send(ServerInfo.SET_GITVC)) \
             .grid(row=3, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="Unset GITVC", command=lambda: backend.send(ServerInfo.UNSET_GITVC))\
+        tk.ttk.Button(valve_frame, text="END_GITVC", command=lambda: backend.send(ServerInfo.UNSET_GITVC)) \
             .grid(row=3, column=2, padx=15, pady=10)
 
         valve_frame.grid(row=3, column=1, pady=10)

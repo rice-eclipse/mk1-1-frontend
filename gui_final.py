@@ -10,6 +10,8 @@ import matplotlib.animation as animation
 from gui_constants import *
 # from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.transforms import Bbox, BboxBase
+from matplotlib.ticker import AutoLocator
 from config import config
 
 
@@ -122,6 +124,8 @@ class GUIFrontend:
         self.root.wm_title("Rice Eclipse Mk-1.1 GUI")
         self.refresh_rate = 1 # In seconds
 
+#        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
         Pmw.initialise(self.root)
 
         # Create a notebook and the tabs
@@ -145,29 +149,33 @@ class GUIFrontend:
         s.theme_use("default")
 
         # This figure contains everything to do with matplotlib on the left hand side
-        self.figure, axes_list = plt.subplots(nrows=2, ncols=2)
-        self.axes_list = list(axes_list[0]) + list(axes_list[1])
+        self.figure, self.axes_list = plt.subplots(nrows=2, ncols=2)
+        self.axes_list = self.axes_list.flatten()
         self.figure.subplots_adjust(top=.9, bottom=.1, left=.12, right=.95, wspace=.3, hspace=.5)
-        self.figure.set_size_inches(8, 6)
+        self.figure.set_size_inches(8, 6.44)
         self.figure.set_dpi(100)
 
+        #for al in self.axes_list:
+        #    al.set_animated(True)
+
         # Create a canvas to show this figure under the default tab
-        default_canvas = FigureCanvasTkAgg(self.figure, master=mission_control)
-        default_canvas.get_tk_widget().grid(row=1, column=1, sticky="NW")
+        self.canvas = FigureCanvasTkAgg(self.figure, master=mission_control)
+        self.canvas.get_tk_widget().grid(row=1, column=1, sticky="NW")
+
+        self.frame_count = 0
+        self.frames_to_skip = int(config.get("Display","Skip Frames for Axis Update"))
 
         # time = float(str(datetime.now().time()).split(":")[2])
         # print(time)
         # self.last_update = [time, time, time, time]
-        self.plots = [axes_list[0][0].plot([0], [0])[0],
-                      axes_list[0][1].plot([0], [0])[0],
-                      axes_list[1][0].plot([0], [0])[0],
-                      axes_list[1][1].plot([0], [0])[0]]
+        self.plots = [self.axes_list[0].plot([0], [0])[0],
+                      self.axes_list[1].plot([0], [0])[0],
+                      self.axes_list[2].plot([0], [0])[0],
+                      self.axes_list[3].plot([0], [0])[0]]
 
         # plt.setp(self.plots[0], aa=True)
 
         self.plot_selections = ["LC_MAIN", "LC1", "TC2", "PT_INJE"]
-
-        self.animation = animation.FuncAnimation(self.figure, self.animate, interval=500)
 
         # This frame contains everything to do with buttons and entry boxes on the right hand side
         control_panel = tk.Frame(background="AliceBlue", width=350, height=625)
@@ -191,7 +199,7 @@ class GUIFrontend:
         tk.ttk.Button(network_frame, text="Disconnect", command=lambda: backend.nw.disconnect()) \
             .grid(row=3, column=2, pady=(15, 10), padx=15)
 
-        network_frame.grid(row=1, column=1, pady=(7, 20))
+        network_frame.grid(row=1, column=1, pady=(7, 10))
 
         # Frame for selection of graphs
         graph_frame = tk.LabelFrame(control_panel, text="Graphs", background="AliceBlue")
@@ -220,7 +228,7 @@ class GUIFrontend:
         tk.ttk.Checkbutton(graph_frame, text="Data Limits", variable=self.set_limits) \
             .grid(row=5, column=2, sticky="w", padx=15, pady=(5, 15))
 
-        graph_frame.grid(row=2, column=1, pady=15)
+        graph_frame.grid(row=2, column=1, pady=10)
 
         # Frame for controlling the valves
         valve_frame = tk.LabelFrame(control_panel, text="Valve", background="AliceBlue")
@@ -231,25 +239,34 @@ class GUIFrontend:
         tk.ttk.Button(valve_frame, text="Unset Valve", command=lambda: backend.send(ServerInfo.UNSET_VALVE))\
             .grid(row=1, column=2, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="GITVC", command=lambda: backend.send(ServerInfo.GITVC))\
+        tk.ttk.Button(valve_frame, text="Water", command=lambda: backend.send(ServerInfo.SET_WATER)) \
             .grid(row=2, column=1, padx=15, pady=10)
 
-        valve_frame.grid(row=3, column=1, pady=15)
+        tk.ttk.Button(valve_frame, text="End Water", command=lambda: backend.send(ServerInfo.UNSET_WATER)) \
+            .grid(row=2, column=2, padx=15, pady=10)
+
+        tk.ttk.Button(valve_frame, text="Set GITVC", command=lambda: backend.send(ServerInfo.SET_GITVC))\
+            .grid(row=3, column=1, padx=15, pady=10)
+
+        tk.ttk.Button(valve_frame, text="Unset GITVC", command=lambda: backend.send(ServerInfo.UNSET_GITVC))\
+            .grid(row=3, column=2, padx=15, pady=10)
+
+        valve_frame.grid(row=3, column=1, pady=10)
 
         # Frame for ignition
         ignition_frame = tk.LabelFrame(control_panel, text="Ignition", background="AliceBlue")
 
-        tk.ttk.Label(ignition_frame, text="Burn Time", background="AliceBlue")\
-            .grid(row=1, column=1, sticky="w", padx=15)
-        tk.ttk.Label(ignition_frame, text="Delay", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
-
-        self.burn_entry = tk.ttk.Entry(ignition_frame, width=6)
-        self.burn_entry.insert(tk.END, '3')
-        self.burn_entry.grid(row=2, column=1, padx=15, sticky="w")
-
-        self.delay_entry = tk.ttk.Entry(ignition_frame, width=6)
-        self.delay_entry.insert(tk.END, '0.5')
-        self.delay_entry.grid(row=2, column=2, padx=15, sticky="w")
+        # tk.ttk.Label(ignition_frame, text="Burn Time", background="AliceBlue")\
+        #     .grid(row=1, column=1, sticky="w", padx=15)
+        # tk.ttk.Label(ignition_frame, text="Delay", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
+        #
+        # self.burn_entry = tk.ttk.Entry(ignition_frame, width=6)
+        # self.burn_entry.insert(tk.END, '3')
+        # self.burn_entry.grid(row=2, column=1, padx=15, sticky="w")
+        #
+        # self.delay_entry = tk.ttk.Entry(ignition_frame, width=6)
+        # self.delay_entry.insert(tk.END, '0.5')
+        # self.delay_entry.grid(row=2, column=2, padx=15, sticky="w")
 
         # TODO send the ignition length to the backend when we press the button
         set_ignition_button = tk.ttk.Button(ignition_frame, text="IGNITE",
@@ -266,7 +283,7 @@ class GUIFrontend:
         unset_ignition_button.image = unset_ignition_image
         unset_ignition_button.grid(row=3, column=2, padx=15, pady=10)
 
-        ignition_frame.grid(row=4, column=1, pady=(20, 10))
+        ignition_frame.grid(row=4, column=1, pady=15)
 
         self.st = Pmw.ScrolledText(logging,
                                    columnheader=1,
@@ -302,24 +319,72 @@ class GUIFrontend:
 
         self.log_output.grid(row=2, column=1)
 
+
+        #plt.show()
+        self.canvas.draw()
+        self.frame_delay_ms = round(1000/int(config.get("Display","Target Framerate")))
+        if (config.get("Display","Use matplotlib Animation") == "True"):
+            blit = config.get("Display","Blit") == "True"
+            self.animation = animation.FuncAnimation(self.figure, self.animate, interval=self.frame_delay_ms, blit=blit)
+        else:
+            tmp_xtick = []
+            for i in range(4):
+                #tmp_xtick.append(self.axes_list[i].get_xticklabels())
+                self.axes_list[i].set_yticks([])
+                self.axes_list[i].set_xticks([])
+            self.canvas.draw()
+            for i in range(4):
+                #tmp_xtick.append(self.axes_list[i].get_xticklabels())
+                self.axes_list[i].xaxis.set_major_locator(AutoLocator())
+                self.axes_list[i].yaxis.set_major_locator(AutoLocator())
+            #self.axes_list[0].set_xticklabels(tmp_xtick[0])
+            [width, height]= self.canvas.get_width_height()
+            self.graphArea = self.canvas.copy_from_bbox(Bbox.from_bounds(0, 0, width, height))
+            #self.graphArea = self.canvas.copy_from_bbox(self.plots[0].axes.bbox)
+            #print(self.plots[0].axes.bbox)
+            #print(self.plots[1].axes.bbox)
+            self.root.after(0,self.draw_graphs())
+
+
     def animate(self, *fargs):
-        # Randomly generate some data to plot
+        # # Randomly generate some data to plot
         # for queue in self.backend.queues:
-            # length = len(queue) - 1
-            # for j in range(1, 11):
-                # queue.append((random.randint(0, 30) * 1.123456789, queue[length][1] + j))
+        #     length = len(queue) - 1
+        #     for j in range(1, 11):
+        #         queue.append((random.randint(0, 1000), queue[length][1] + j))
+                #queue.append((queue[length][1] + j, queue[length][1] + j))
             # print (queue)
         # print (self.backend.queues[0][-10:])
 
         # Only graph if we are on the mission control tab
         if self.notebook.index(self.notebook.select()) == 0:
-            self.update_graphs()
+            return self.update_graphs()
         elif self.notebook.index(self.notebook.select()) == 1:
             self.update_log_displays()
 
-    def update_graphs(self):
+    def draw_graphs(self):
+        self.root.after(self.frame_delay_ms,self.draw_graphs)
+        self.animate()
+        self.canvas.restore_region(self.graphArea)
+        self.frame_count = self.frame_count + 1
+        if self.frame_count == self.frames_to_skip or self.frames_to_skip == 0:
+            self.frame_count = 0
+            update_axes = True
+        else:
+            update_axes = False
+        for i in range(4):
+            #plt.draw()
+            #self.canvas.draw()
+            self.plots[i].axes.draw_artist(self.plots[i])
+            if update_axes:
+                self.plots[i].axes.draw_artist(self.axes_list[i].get_xaxis())
+                self.plots[i].axes.draw_artist(self.axes_list[i].get_yaxis())
+            else:
+                self.canvas.blit(self.plots[i].axes.bbox)
+        if update_axes:
+            self.canvas.blit(self.plots[0].axes.clipbox)
 
-        # time_now = float(str(datetime.now().time()).split(":")[2])
+    def update_graphs(self):
         for i in range(4):
             # Get which graph the user has selected and get the appropriate queue from the backend
             graph_selection = self.graph_variables[i].get()
@@ -330,6 +395,7 @@ class GUIFrontend:
                 data_ratio = 1
             else:
                 data_ratio = int(data_lengths[graph_selection] / samples_to_keep[graph_selection])
+            # print (data_ratio)
 
             y_data = [cal for cal, t in data_queue[-data_length::data_ratio]]
             self.plots[i].set_xdata([t for cal, t in data_queue[-data_length::data_ratio]])
@@ -352,6 +418,12 @@ class GUIFrontend:
             self.axes_list[i].set_ylabel(labels[graph_selection][1])
 
             self.plot_selections[i] = graph_selection
+        return self.plots[1],self.plots[2],self.plots[3],self.plots[0],
+
+    # def on_closing(self):
+    #     if messagebox.askokcancel("Quit", "Do you want to quit?"):
+    #         self.root.destroy()
+	 #    self.root.quit()
 
     def update_log_displays(self):
         self.st.clear()
@@ -390,3 +462,5 @@ class GUIFrontend:
 
 frontend = GUIFrontend(GUIBackend([], [], [], [], [], [], [], [], [], []))
 frontend.root.mainloop()
+# Forces all threads to close
+# os._exit(1)

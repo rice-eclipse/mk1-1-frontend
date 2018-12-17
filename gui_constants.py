@@ -1,4 +1,4 @@
-from server_info import ServerInfo
+from networking.server_info import ServerInfo
 
 labels = {
     "LC1": ("Time(s)", "Force (N)"),

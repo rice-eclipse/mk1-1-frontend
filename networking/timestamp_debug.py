@@ -3,19 +3,16 @@
 import socket
 import threading
 from queue import Queue
-import serial
 import matplotlib
 
 matplotlib.use("TKAgg")
 import tkinter as tk
-from tkinter import ttk
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.animation as animation
 from  matplotlib import style
 
 s = socket.socket()
-# make it configurable in the gui (text input box and button)
 
 # data buffer
 queue1 = Queue()
@@ -80,8 +77,7 @@ def animate(i):
         a.plot(xlist, ylist)
 
 
-# called serialread, actually socket read though. rename if you want (be sure to change the name in other locations)
-def serialread(s, q):
+def socketread(s, q):
     while 1:
         data = s.recv(2)
         data1= s.recv(8)
@@ -90,6 +86,7 @@ def serialread(s, q):
             q.put(data1)
 
             print(data)
+
 
 # thread for data acquisition
 class myThread1(threading.Thread):
@@ -100,7 +97,7 @@ class myThread1(threading.Thread):
         self.counter = counter
 
     def run(self):
-        serialread(s, queue1)
+        socketread(s, queue1)
 
 
 # gui set up
@@ -139,9 +136,11 @@ def test(entry):
     s.send(str.encode(entry))
     s.send(str.encode("\n"))
 
+
 def start_listen():
     thread1 = myThread1(1, "Thread-1", 1)
     thread1.start()
+
 
 # startpage
 class StartPage(tk.Frame):
@@ -158,10 +157,6 @@ class StartPage(tk.Frame):
         entry3.grid(row=1, column=11)
         button4 = tk.Button(self, text="Connect", command=lambda: connect_socket(entry2.get(), entry3.get()))
         button4.grid(row=1, column=12)
-        # button5 = tk.Button(self, text="Plot", command=lambda:start_listen())
-        # button5.grid(row=2,column=12)
-        # more buttons can be added,as well as text boxes
-        # the third arguement is gonna be the function the button need to bind
         button1 = tk.Button(self, text="Button1")
         button2 = tk.Button(self, text="Button2")
         button3 = tk.Button(self, text="Button3", command=lambda: test(entry1.get()))
@@ -175,27 +170,12 @@ class StartPage(tk.Frame):
         self.controller = controller
 
         canvas = FigureCanvasTkAgg(f, self)
-        canvas.show()
+        canvas.draw()
+        # canvas.show()
         canvas.get_tk_widget().grid(row=3, column=10, columnspan=3, rowspan=1, padx=5, pady=5, sticky="WENS")
 
 
-        # don't actually need it right now
-        # def updateGui(self):
-        #     if queue1.qsize() >= 2:
-        #         first_byte = queue1.get()
-        #         second_byte = queue1.get()
-        #
-        #         final_num = int.from_bytes(second_byte+first_byte, byteorder="big",signed=True)
-        #         self.controller.lbl["text"] = final_num
-        #         self.controller.update()
-        #         self.controller.lbl.after(1000, self.updateGui)
-        #     else:
-        #         self.controller.lbl.after(1000, self.updateGui)
-
-
 gui1 = gui()
-
-# put the thread run in a button binded function in order to control when it would run
 
 ani = animation.FuncAnimation(f, animate, interval=25)
 

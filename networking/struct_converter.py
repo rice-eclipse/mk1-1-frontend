@@ -1,5 +1,10 @@
 import struct
-from server_info import ServerInfo
+from networking.server_info import ServerInfo
+
+"""
+File for converting binary logs on the Pi into human-readable logs. The format string
+is hard-coded based on the format of the data written to the binary logs.
+"""
 
 format_string = "2Q"
 mtype = ServerInfo.LC1_SEND

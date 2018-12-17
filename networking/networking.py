@@ -1,6 +1,5 @@
 import socket
 import threading
-from collections import deque
 
 from queue import Queue
 
@@ -10,7 +9,7 @@ import sys
 import time
 
 from logger import LogLevel, Logger
-from server_info import*
+from networking.server_info import*
 from config import config
 
 # MAJOR TODO move this networker to processing requests on its own thread and then let it attempt reconnection.
@@ -207,9 +206,6 @@ class Networker:
             return None, None
 
         htype, nbytes = struct.unpack(self.server_info.info.header_format_string, b)
-        # htype, nbytes = struct.unpack("c7xi4x", b)
-        # htype, nbytes = self.server_info.decode_header(b)
-        #print(htype)
 
         self.logger.debugv("Received message header: Type:" + str(htype) + " Nbytes:" + str(nbytes))
 

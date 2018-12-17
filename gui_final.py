@@ -4,8 +4,8 @@ import tkinter as tk
 import Pmw
 import random
 import tkinter.ttk as ttk
-from concurrency import async
-from networking import*
+from networking.networking import *
+from concurrency import run_async
 import matplotlib.animation as animation
 from gui_constants import *
 # from datetime import datetime
@@ -80,7 +80,7 @@ class GUIBackend:
         self.logger.error("IGNITING!!!")
         self.nw.send(ServerInfo.NORM_IGNITE)
 
-    @async
+    @run_async
     def _periodic_process_recv(self):
         while True:
             time.sleep(0.1)
@@ -271,14 +271,14 @@ class GUIFrontend:
         # TODO send the ignition length to the backend when we press the button
         set_ignition_button = tk.ttk.Button(ignition_frame, text="IGNITE",
                                             command=lambda: backend.send(ServerInfo.NORM_IGNITE))
-        set_ignition_image = PhotoImage(file="ignite.gif")
+        set_ignition_image = PhotoImage(file="resources/ignite.gif")
         set_ignition_button.config(image=set_ignition_image)
         set_ignition_button.image = set_ignition_image
         set_ignition_button.grid(row=3, column=1, padx=15, pady=10)
 
         unset_ignition_button = tk.ttk.Button(ignition_frame, text="UNIGNITE",
                                               command=lambda: backend.send(ServerInfo.UNSET_IGNITION))
-        unset_ignition_image = PhotoImage(file="unignite.gif")
+        unset_ignition_image = PhotoImage(file="resources/unignite.gif")
         unset_ignition_button.config(image=unset_ignition_image)
         unset_ignition_button.image = unset_ignition_image
         unset_ignition_button.grid(row=3, column=2, padx=15, pady=10)

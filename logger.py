@@ -10,7 +10,7 @@ class LogLevel:
     """
     Mapping of log level enums to names.
     """
-    DEBUGV = {'name': 'DEBUGV', 'value' : 4}
+    DEBUGV = {'name': 'DEBUGV', 'value': 4}
     DEBUG = {'name': 'DEBUG', 'value': 3}
     INFO = {'name': 'INFO', 'value': 2}
     WARN = {'name': 'WARN', 'value': 1}

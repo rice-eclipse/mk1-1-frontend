@@ -353,3 +353,6 @@ class GUIFrontend:
         for i in range(len(self.backend.nw.network_logs)):
             self.log_output.insert('end', self.backend.nw.network_logs[i] + '\n')
         self.backend.nw.network_logs.clear()
+
+    def start(self):
+        self.root.mainloop()

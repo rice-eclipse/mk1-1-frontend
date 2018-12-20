@@ -49,7 +49,6 @@ class GUIBackend:
 
         self.gui_logs = ["GUI Logs Ready"]
         self.logger = Logger(name='GUI', log_list=self.gui_logs, level=LogLevel.INFO, outfile='gui.log')
-        self._periodic_process_recv()
 
     def send_text(self, s):
         self.nw.send(str.encode(s))
@@ -73,7 +72,7 @@ class GUIBackend:
         self.nw.send(ServerInfo.NORM_IGNITE)
 
     @run_async
-    def _periodic_process_recv(self):
+    def start(self):
         while True:
             time.sleep(0.1)
             if not self.nw.connected:

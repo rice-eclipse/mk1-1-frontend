@@ -105,3 +105,12 @@ class GUIBackend:
                     # sys.stdout.write(message.decode('utf-8'))
                 else:
                     self.logger.error("Received incorrect message header type" + str(mtype))
+
+    def disconnect(self):
+        self.nw.disconnect()
+
+    def get_all_queues(self):
+        return self.queues
+
+    def get_queue(self, name):
+        return self.queue_dict[name]

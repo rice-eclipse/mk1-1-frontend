@@ -108,7 +108,7 @@ class GUIFrontend:
 
         tk.ttk.Button(network_frame, text="Connect", command=lambda: self.backend_adapter.connect(ip_entry.get(), port_entry.get()))\
             .grid(row=3, column=1, pady=(15, 10), padx=15, sticky="w")
-        tk.ttk.Button(network_frame, text="Disconnect", command=lambda: self.backend_adapter.nw.disconnect()) \
+        tk.ttk.Button(network_frame, text="Disconnect", command=lambda: self.backend_adapter.disconnect()) \
             .grid(row=3, column=2, pady=(15, 10), padx=15)
 
         network_frame.grid(row=1, column=1, pady=(7, 10))
@@ -258,7 +258,7 @@ class GUIFrontend:
 
     def animate(self, *args):
         # Randomly generate some data to plot
-        for queue in self.backend_adapter.queues:
+        for queue in self.backend_adapter.get_all_queues():
             length = len(queue) - 1
             for j in range(1, 11):
                 queue.append((random.randint(0, 1000), queue[length][1] + j))
@@ -298,7 +298,7 @@ class GUIFrontend:
         for i in range(4):
             # Get which graph the user has selected and get the appropriate queue from the backend
             graph_selection = self.graph_variables[i].get()
-            data_queue = self.backend_adapter.queue_dict[str_to_byte[graph_selection]]
+            data_queue = self.backend_adapter.get_queue(str_to_byte[graph_selection])
             data_length = data_lengths[graph_selection]
 
             if self.fine_control.get():

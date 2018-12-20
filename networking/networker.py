@@ -10,7 +10,6 @@ import time
 
 from logger import LogLevel, Logger
 from networking.server_info import*
-from config import config
 
 # MAJOR TODO move this networker to processing requests on its own thread and then let it attempt reconnection.
 
@@ -49,7 +48,8 @@ class Networker:
 
         return tcp_sock, udp_sock
 
-    def __init__(self, queue=None, loglevel=LogLevel.DEBUG):
+    def __init__(self, config, queue=None, loglevel=LogLevel.DEBUG):
+        self.config = config
         self.tcp_sock, self.udp_sock = self.make_socket()
         self.recv_sock = None
         self.addr = None
@@ -100,7 +100,7 @@ class Networker:
         while self.trying_connect:
             try:
                 self.tcp_sock.connect((self.addr, int(self.port)))
-                if (config.get("Server", "Protocol") == "UDP"):
+                if (self.config.get("Server", "Protocol") == "UDP"):
                     self.udp_sock.bind(('', int(self.port)))
                     self.recv_sock = self.udp_sock
                     self.logger.error("Receiving on UDP")

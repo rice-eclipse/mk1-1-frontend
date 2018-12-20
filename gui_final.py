@@ -4,8 +4,8 @@ import tkinter as tk
 import Pmw
 import random
 import tkinter.ttk as ttk
-from concurrency import async
-from networking import*
+from networking.networking import *
+from concurrency import run_async
 import matplotlib.animation as animation
 from gui_constants import *
 # from datetime import datetime
@@ -80,7 +80,7 @@ class GUIBackend:
         self.logger.error("IGNITING!!!")
         self.nw.send(ServerInfo.NORM_IGNITE)
 
-    @async
+    @run_async
     def _periodic_process_recv(self):
         while True:
             time.sleep(0.1)
@@ -122,7 +122,7 @@ class GUIFrontend:
         self.root = tk.Tk()
         self.root.resizable(False, False)
         self.root.wm_title("Rice Eclipse Mk-1.1 GUI")
-        self.refresh_rate = 1 # In seconds
+        self.refresh_rate = 1  # In seconds
 
 #        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -155,7 +155,7 @@ class GUIFrontend:
         self.figure.set_size_inches(8, 6.44)
         self.figure.set_dpi(100)
 
-        #for al in self.axes_list:
+        # for al in self.axes_list:
         #    al.set_animated(True)
 
         # Create a canvas to show this figure under the default tab
@@ -163,7 +163,7 @@ class GUIFrontend:
         self.canvas.get_tk_widget().grid(row=1, column=1, sticky="NW")
 
         self.frame_count = 0
-        self.frames_to_skip = int(config.get("Display","Skip Frames for Axis Update"))
+        self.frames_to_skip = int(config.get("Display", "Skip Frames for Axis Update"))
 
         # time = float(str(datetime.now().time()).split(":")[2])
         # print(time)
@@ -187,11 +187,11 @@ class GUIFrontend:
         tk.ttk.Label(network_frame, text="port", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
 
         ip_entry = tk.ttk.Entry(network_frame, width=15)
-        ip_entry.insert(tk.END, config.get("UI Defaults","Address"))
+        ip_entry.insert(tk.END, config.get("UI Defaults", "Address"))
         ip_entry.grid(row=2, column=1, padx=15)
 
         port_entry = tk.ttk.Entry(network_frame, width=5)
-        port_entry.insert(tk.END, config.get("UI Defaults","Port"))
+        port_entry.insert(tk.END, config.get("UI Defaults", "Port"))
         port_entry.grid(row=2, column=2, padx=15, sticky="w")
 
         tk.ttk.Button(network_frame, text="Connect", command=lambda: backend.connect(ip_entry.get(), port_entry.get()))\
@@ -271,14 +271,14 @@ class GUIFrontend:
         # TODO send the ignition length to the backend when we press the button
         set_ignition_button = tk.ttk.Button(ignition_frame, text="IGNITE",
                                             command=lambda: backend.send(ServerInfo.NORM_IGNITE))
-        set_ignition_image = PhotoImage(file="ignite.gif")
+        set_ignition_image = PhotoImage(file="resources/ignite.gif")
         set_ignition_button.config(image=set_ignition_image)
         set_ignition_button.image = set_ignition_image
         set_ignition_button.grid(row=3, column=1, padx=15, pady=10)
 
         unset_ignition_button = tk.ttk.Button(ignition_frame, text="UNIGNITE",
                                               command=lambda: backend.send(ServerInfo.UNSET_IGNITION))
-        unset_ignition_image = PhotoImage(file="unignite.gif")
+        unset_ignition_image = PhotoImage(file="resources/unignite.gif")
         unset_ignition_button.config(image=unset_ignition_image)
         unset_ignition_button.image = unset_ignition_image
         unset_ignition_button.grid(row=3, column=2, padx=15, pady=10)
@@ -319,32 +319,30 @@ class GUIFrontend:
 
         self.log_output.grid(row=2, column=1)
 
-
-        #plt.show()
+        # plt.show()
         self.canvas.draw()
-        self.frame_delay_ms = round(1000/int(config.get("Display","Target Framerate")))
-        if (config.get("Display","Use matplotlib Animation") == "True"):
-            blit = config.get("Display","Blit") == "True"
+        self.frame_delay_ms = round(1000 / int(config.get("Display", "Target Framerate")))
+        if (config.get("Display", "Use matplotlib Animation") == "True"):
+            blit = config.get("Display", "Blit") == "True"
             self.animation = animation.FuncAnimation(self.figure, self.animate, interval=self.frame_delay_ms, blit=blit)
         else:
             tmp_xtick = []
             for i in range(4):
-                #tmp_xtick.append(self.axes_list[i].get_xticklabels())
+                # tmp_xtick.append(self.axes_list[i].get_xticklabels())
                 self.axes_list[i].set_yticks([])
                 self.axes_list[i].set_xticks([])
             self.canvas.draw()
             for i in range(4):
-                #tmp_xtick.append(self.axes_list[i].get_xticklabels())
+                # tmp_xtick.append(self.axes_list[i].get_xticklabels())
                 self.axes_list[i].xaxis.set_major_locator(AutoLocator())
                 self.axes_list[i].yaxis.set_major_locator(AutoLocator())
-            #self.axes_list[0].set_xticklabels(tmp_xtick[0])
-            [width, height]= self.canvas.get_width_height()
+            # self.axes_list[0].set_xticklabels(tmp_xtick[0])
+            [width, height] = self.canvas.get_width_height()
             self.graphArea = self.canvas.copy_from_bbox(Bbox.from_bounds(0, 0, width, height))
             #self.graphArea = self.canvas.copy_from_bbox(self.plots[0].axes.bbox)
-            #print(self.plots[0].axes.bbox)
-            #print(self.plots[1].axes.bbox)
-            self.root.after(0,self.draw_graphs())
-
+            # print(self.plots[0].axes.bbox)
+            # print(self.plots[1].axes.bbox)
+            self.root.after(0, self.draw_graphs())
 
     def animate(self, *fargs):
         # # Randomly generate some data to plot
@@ -363,7 +361,7 @@ class GUIFrontend:
             self.update_log_displays()
 
     def draw_graphs(self):
-        self.root.after(self.frame_delay_ms,self.draw_graphs)
+        self.root.after(self.frame_delay_ms, self.draw_graphs)
         self.animate()
         self.canvas.restore_region(self.graphArea)
         self.frame_count = self.frame_count + 1
@@ -373,8 +371,8 @@ class GUIFrontend:
         else:
             update_axes = False
         for i in range(4):
-            #plt.draw()
-            #self.canvas.draw()
+            # plt.draw()
+            # self.canvas.draw()
             self.plots[i].axes.draw_artist(self.plots[i])
             if update_axes:
                 self.plots[i].axes.draw_artist(self.axes_list[i].get_xaxis())
@@ -404,7 +402,7 @@ class GUIFrontend:
             # print(time_now)
             # if time_now - self.last_update[i] > self.refresh_rate:
             self.axes_list[i].relim()
-            self.axes_list[i].set_ylim(auto=True) # In case ylim was set to a lower value for a different sensor
+            self.axes_list[i].set_ylim(auto=True)  # In case ylim was set to a lower value for a different sensor
 
             if self.set_limits.get() and max(y_data) > data_limits[graph_selection]:
                 self.axes_list[i].set_ylim(ymax=data_limits[graph_selection])
@@ -418,12 +416,12 @@ class GUIFrontend:
             self.axes_list[i].set_ylabel(labels[graph_selection][1])
 
             self.plot_selections[i] = graph_selection
-        return self.plots[1],self.plots[2],self.plots[3],self.plots[0],
+        return self.plots[1], self.plots[2], self.plots[3], self.plots[0],
 
     # def on_closing(self):
     #     if messagebox.askokcancel("Quit", "Do you want to quit?"):
     #         self.root.destroy()
-	 #    self.root.quit()
+        #    self.root.quit()
 
     def update_log_displays(self):
         self.st.clear()

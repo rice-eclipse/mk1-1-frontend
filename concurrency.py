@@ -7,7 +7,7 @@ import threading
 from functools import wraps
 
 
-def async(func):
+def run_async(func):
     """
     Function decorator to make a function run asynchronously, by invoking it from a separate thread.
 
@@ -30,3 +30,4 @@ def async(func):
         return thread
 
     return async_func
+# abcd

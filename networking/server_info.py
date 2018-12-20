@@ -11,6 +11,7 @@ class ServerInfo:
     A class that contains all the configuration info, like if we're connected to a pi or not.
     Used to track manually unpacking structs and other dumb stuff.
     """
+
     def __init__(self):
         self.on_pi = True
         self.info = ServerInfo.PiInfo
@@ -54,7 +55,6 @@ class ServerInfo:
 
     c = config.get("Calibration", "LC1_SEND").split(",")
     print(tuple(c))
-
 
     # calibrations = {
     #     LC1_SEND: (1, 0),
@@ -115,7 +115,6 @@ class ServerInfo:
         payload_bytes = 16
 
         header_format_string = "c7xi4x"
-
 
     def read_payload(self, b, nbytes, out_queue, mtype=None):
         assert nbytes % self.info.payload_bytes == 0

@@ -1,4 +1,4 @@
-from server_info import ServerInfo
+from networking.server_info import ServerInfo
 
 labels = {
     "LC1": ("Time(s)", "Force (N)"),
@@ -9,7 +9,7 @@ labels = {
     "PT_COMB": ("Time(s)", "Pressure (PSI)"),
     "PT_INJE": ("Time(s)", "Pressure (PSI)"),
     "TC1": ("Time(s)", "Temperature (C)"),
-    "TC2":("Time(s)", "Temperature (C)"),
+    "TC2": ("Time(s)", "Temperature (C)"),
     "TC3": ("Time(s)", "Temperature (C)"),
 }
 

@@ -1,6 +1,5 @@
 import socket
 import threading
-from collections import deque
 
 from queue import Queue
 
@@ -10,10 +9,12 @@ import sys
 import time
 
 from logger import LogLevel, Logger
-from server_info import*
+from networking.server_info import*
 from config import config
 
 # MAJOR TODO move this networker to processing requests on its own thread and then let it attempt reconnection.
+
+
 class Networker:
     class NWThread(threading.Thread):
         def __init__(self, threadID, name, counter, nw):
@@ -32,8 +33,8 @@ class Networker:
                 self.nw.conn_event.wait()
 
                 # Try to receive a message:
-                t,nb,m = self.nw.read_message()
-                #print(t)
+                t, nb, m = self.nw.read_message()
+                # print(t)
                 if (t is not None):
                     self.nw.out_queue.put((t, nb, m))
 
@@ -42,20 +43,20 @@ class Networker:
         tcp_sock = socket.socket()
         udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-         # 50ms timeout, with the intent of giving just a bit of time if receiving.
+        # 50ms timeout, with the intent of giving just a bit of time if receiving.
         tcp_sock.settimeout(5)
         udp_sock.settimeout(5)
 
         return tcp_sock, udp_sock
 
-    def __init__(self, queue=None, loglevel = LogLevel.DEBUG):
-        self.tcp_sock,self.udp_sock = self.make_socket()
+    def __init__(self, queue=None, loglevel=LogLevel.DEBUG):
+        self.tcp_sock, self.udp_sock = self.make_socket()
         self.recv_sock = None
         self.addr = None
         self.port = None
         self.connected = False
         self.trying_connect = False
-        #TODO for now we only have the data receiving on a separate thread because that was straightforward:
+        # TODO for now we only have the data receiving on a separate thread because that was straightforward:
         self.out_queue = queue if queue is not None else Queue()
         self.conn_event = threading.Event()
 
@@ -88,7 +89,6 @@ class Networker:
             self.disconnect()
             self.addr = addr
 
-
         if port is not None and self.port != port:
             self.disconnect()
             self.port = port
@@ -100,7 +100,7 @@ class Networker:
         while self.trying_connect:
             try:
                 self.tcp_sock.connect((self.addr, int(self.port)))
-                if (config.get("Server","Protocol") == "UDP"):
+                if (config.get("Server", "Protocol") == "UDP"):
                     self.udp_sock.bind(('', int(self.port)))
                     self.recv_sock = self.udp_sock
                     self.logger.error("Receiving on UDP")
@@ -140,7 +140,7 @@ class Networker:
         self.recv_sock = None
 
         # Recreate the socket so that we aren't screwed.
-        self.tcp_sock,self.udp_sock = self.make_socket()
+        self.tcp_sock, self.udp_sock = self.make_socket()
 
     def send(self, message):
         """
@@ -178,7 +178,7 @@ class Networker:
             raise Exception("Not connected. Cannot read.")
 
         htype, nbytes = self.read_header()
-        #print(htype)
+        # print(htype)
 
         if nbytes is None or nbytes == 0:
             message = None
@@ -207,9 +207,6 @@ class Networker:
             return None, None
 
         htype, nbytes = struct.unpack(self.server_info.info.header_format_string, b)
-        # htype, nbytes = struct.unpack("c7xi4x", b)
-        # htype, nbytes = self.server_info.decode_header(b)
-        #print(htype)
 
         self.logger.debugv("Received message header: Type:" + str(htype) + " Nbytes:" + str(nbytes))
 
@@ -232,7 +229,7 @@ class Networker:
                 outb += b
         except socket.timeout:
             if bcount > 0:
-                #TODO fix this.
+                # TODO fix this.
                 self.logger.error("Socket timed out during partial read. Major problem.")
 
             self.logger.error("Socket timed out. Trying to disconnect")

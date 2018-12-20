@@ -3,19 +3,16 @@
 import socket
 import threading
 from queue import Queue
-import serial
 import matplotlib
 
 matplotlib.use("TKAgg")
 import tkinter as tk
-from tkinter import ttk
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.animation as animation
-from  matplotlib import style
+from matplotlib import style
 
 s = socket.socket()
-# make it configurable in the gui (text input box and button)
 
 # data buffer
 queue1 = Queue()
@@ -31,6 +28,7 @@ a = f.add_subplot(111)
 xlist = []
 ylist = []
 
+
 def lshift(lst, number):
     for i in range(0, len(lst)):
         if i < len(lst) - number:
@@ -39,6 +37,8 @@ def lshift(lst, number):
             lst[i] = 0
 
 # animation for live plot
+
+
 def animate(i):
     # could make it update a whole chunk of data instead
     n = 400
@@ -80,16 +80,16 @@ def animate(i):
         a.plot(xlist, ylist)
 
 
-# called serialread, actually socket read though. rename if you want (be sure to change the name in other locations)
-def serialread(s, q):
+def socketread(s, q):
     while 1:
         data = s.recv(2)
-        data1= s.recv(8)
+        data1 = s.recv(8)
         if len(data) != 0 and len(data1) != 0:
             q.put(data)
             q.put(data1)
 
             print(data)
+
 
 # thread for data acquisition
 class myThread1(threading.Thread):
@@ -100,7 +100,7 @@ class myThread1(threading.Thread):
         self.counter = counter
 
     def run(self):
-        serialread(s, queue1)
+        socketread(s, queue1)
 
 
 # gui set up
@@ -139,9 +139,11 @@ def test(entry):
     s.send(str.encode(entry))
     s.send(str.encode("\n"))
 
+
 def start_listen():
     thread1 = myThread1(1, "Thread-1", 1)
     thread1.start()
+
 
 # startpage
 class StartPage(tk.Frame):
@@ -151,17 +153,15 @@ class StartPage(tk.Frame):
         label1.grid(row=0, column=10)
         entry2 = tk.Entry(self)
         entry2.grid(row=0, column=11)
+        entry2.insert(tk.END, "127.0.0.1")
 
         label2 = tk.Label(self, text="port")
         label2.grid(row=1, column=10)
         entry3 = tk.Entry(self)
         entry3.grid(row=1, column=11)
+        entry3.insert(tk.END, "1234")
         button4 = tk.Button(self, text="Connect", command=lambda: connect_socket(entry2.get(), entry3.get()))
         button4.grid(row=1, column=12)
-        # button5 = tk.Button(self, text="Plot", command=lambda:start_listen())
-        # button5.grid(row=2,column=12)
-        # more buttons can be added,as well as text boxes
-        # the third arguement is gonna be the function the button need to bind
         button1 = tk.Button(self, text="Button1")
         button2 = tk.Button(self, text="Button2")
         button3 = tk.Button(self, text="Button3", command=lambda: test(entry1.get()))
@@ -175,27 +175,12 @@ class StartPage(tk.Frame):
         self.controller = controller
 
         canvas = FigureCanvasTkAgg(f, self)
-        canvas.show()
+        canvas.draw()
+        # canvas.show()
         canvas.get_tk_widget().grid(row=3, column=10, columnspan=3, rowspan=1, padx=5, pady=5, sticky="WENS")
 
 
-        # don't actually need it right now
-        # def updateGui(self):
-        #     if queue1.qsize() >= 2:
-        #         first_byte = queue1.get()
-        #         second_byte = queue1.get()
-        #
-        #         final_num = int.from_bytes(second_byte+first_byte, byteorder="big",signed=True)
-        #         self.controller.lbl["text"] = final_num
-        #         self.controller.update()
-        #         self.controller.lbl.after(1000, self.updateGui)
-        #     else:
-        #         self.controller.lbl.after(1000, self.updateGui)
-
-
 gui1 = gui()
-
-# put the thread run in a button binded function in order to control when it would run
 
 ani = animation.FuncAnimation(f, animate, interval=25)
 

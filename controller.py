@@ -36,6 +36,9 @@ class GUIController:
             def get_queue(self, name):
                 return backend.get_queue(name)
 
+            def send(self, b):
+                backend.send(b)
+
         backend = GUIBackend(back2front_adapter(), config)
         self.backend = backend
 

@@ -1,4 +1,5 @@
 import socket
+import struct
 import threading
 
 from queue import Queue

@@ -35,7 +35,7 @@ class GUIFrontend:
         self.frame_count = 0
         self.frames_to_skip = int(self.config.get("Display", "Skip Frames for Axis Update"))
         self.plot_selections = ["LC_MAIN", "LC1", "TC2", "PT_INJE"]
-        self.choices = list(ServerInfo.filenames.values())
+        self.choices = list(labels.keys())
 
         self.notebook = self.init_tabs_container()
         self.canvas, self.figure, self.plots, self.axes_list = self.init_graphs()
@@ -147,7 +147,7 @@ class GUIFrontend:
         tk.ttk.Button(valve_frame, text="Set Valve", command=lambda: self.backend_adapter.send(ServerInfo.SET_VALVE))\
             .grid(row=1, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="Unset Valve", command=lambda: self.backend_adapter.send(ServerInfo.UNSET_VALVE))\
+        tk.ttk.Button(valve_frame, text="Unset Valve", command=lambda: self.backend_adapter.send(ServerInfo.SET_VALVE))\
             .grid(row=1, column=2, padx=15, pady=10)
 
         tk.ttk.Button(valve_frame, text="Water", command=lambda: self.backend_adapter.send(ServerInfo.SET_WATER)) \

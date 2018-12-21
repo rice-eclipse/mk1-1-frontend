@@ -18,7 +18,7 @@ class LogLevel:
 
 
 class Logger:
-    def __init__(self, name, log_list, level=LogLevel.DEBUG, outfile=None):
+    def __init__(self, name, log_list, display_func=lambda *args: None, level=LogLevel.DEBUG, outfile=None):
         """
         Initializes a logger.
 
@@ -26,8 +26,9 @@ class Logger:
         :param level: The log level at which to supress messages.
         """
         self.name = name
-        self.level = level
         self.log_list = log_list
+        self.display_func = display_func
+        self.level = level
 
         if outfile != None:
             self.fout = open(outfile, mode='a')
@@ -82,12 +83,14 @@ class Logger:
         :param level: Target log level.
         :param message: Message to log.
         """
-        # Don't print if we are supressing the message:
+        # Don't print if we are suppressing the message:
         if self.level['value'] < level['value']:
             return
 
-        self.log_list.append(self.format_log(level, message))
-        self._print_stdout(self.format_log(level, message))
+        formatted_msg = self.format_log(level, message)
+        self.log_list.append(formatted_msg)
+        self.display_func(formatted_msg)
+        self._print_stdout(formatted_msg)
 
     def format_log(self, level, message):
         hms = time.strftime('%H:%M:%S')

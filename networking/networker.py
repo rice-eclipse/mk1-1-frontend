@@ -48,7 +48,8 @@ class Networker:
 
         return tcp_sock, udp_sock
 
-    def __init__(self, config, queue=None, loglevel=LogLevel.DEBUG):
+    def __init__(self, logger, config, queue=None):
+        self.logger = logger
         self.config = config
         self.tcp_sock, self.udp_sock = self.make_socket()
         self.recv_sock = None
@@ -63,12 +64,9 @@ class Networker:
         self.thr = Networker.NWThread(1, 'NWThread', 1, self)
         self.thr.start()
 
-        self.network_logs = ["Network Logs Ready"]
-        self.logger = Logger(name='networker', log_list=self.network_logs, level=loglevel, outfile='networker.log')
-
         self.server_info = ServerInfo()
 
-        self.logger.info("Initialized")
+        # self.logger.info("Initialized")
 
     def update_server_info(self, addr):
         host = socket.gethostbyaddr(addr)[0]

@@ -1,5 +1,6 @@
 import configparser
 
+from logger import Logger, LogLevel
 from model import GUIBackend
 from view import GUIFrontend
 
@@ -8,6 +9,13 @@ class GUIController:
     def __init__(self):
         config = configparser.RawConfigParser()
         config.read('config.ini')
+
+        class back2front_adapter:
+            def __init__(self):
+                nonlocal frontend
+
+            def display_msg(self, msg):
+                frontend.network_log_append(msg)
 
         class front2back_adapter:
             def __init__(self):
@@ -28,7 +36,7 @@ class GUIController:
             def get_queue(self, name):
                 return backend.get_queue(name)
 
-        backend = GUIBackend(config)
+        backend = GUIBackend(back2front_adapter(), config)
         self.backend = backend
 
         frontend = GUIFrontend(front2back_adapter(), config)

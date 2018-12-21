@@ -7,12 +7,20 @@ from networking.networker import Networker, ServerInfo
 
 
 class GUIBackend:
-    def __init__(self, config):
-
+    def __init__(self, back2front_adapter, config):
+        self.back2front_adapter = back2front_adapter
         self.config = config
 
         self.nw_queue = Queue()
-        self.nw = Networker(self.config, queue=self.nw_queue, loglevel=LogLevel.INFO)
+        network_logs = ["Network Logs Ready"]
+
+        logger = Logger(name='networker',
+                        display_func=self.back2front_adapter.display_msg,
+                        log_list=network_logs,
+                        level=LogLevel.DEBUG,
+                        outfile='networker.log')
+
+        self.nw = Networker(logger, self.config, queue=self.nw_queue)
 
         self.Q_LC1 = []
         self.Q_LC2 = []
@@ -46,9 +54,6 @@ class GUIBackend:
             ServerInfo.PT_COMB_SEND: self.Q_COMB,
             ServerInfo.PT_INJE_SEND: self.Q_INJE
         }
-
-        self.gui_logs = ["GUI Logs Ready"]
-        self.logger = Logger(name='GUI', log_list=self.gui_logs, level=LogLevel.INFO, outfile='gui.log')
 
     def send_text(self, s):
         self.nw.send(str.encode(s))

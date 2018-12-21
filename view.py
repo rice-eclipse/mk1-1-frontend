@@ -343,7 +343,7 @@ class GUIFrontend:
             data_line = ''
             for column in range(len(self.choices)):
                 # print(self.choices)
-                data_queue = self.backend_adapter.queue_dict[str_to_byte[self.choices[column]]]
+                data_queue = self.backend_adapter.get_queue(str_to_byte[self.choices[column]])
                 value = str(data_queue[max(-len(data_queue) + 1, -num_rows + row)][0])[0:7]
                 # print ("value", value)
                 data_line = data_line + value + ' ' * (10 - len(value))
@@ -352,7 +352,7 @@ class GUIFrontend:
 
         averages = ''
         for column in range(len(self.choices)):
-            data_queue = self.backend_adapter.queue_dict[str_to_byte[self.choices[column]]]
+            data_queue = self.backend_adapter.get_queue(str_to_byte[self.choices[column]])
             avg = str(sum([cal for cal, t in data_queue[-num_rows:]]) / num_rows)[0:7]
             # data = str(average)[:9]
             # data = '%-7s' % (data,)
@@ -360,14 +360,8 @@ class GUIFrontend:
         self.data_logs.insert('end', averages)
         self.data_logs.tag_add("yellow", '20.0', '20.' + str(len(averages)))
 
-        # Logging output for the gui
-        for i in range(len(self.backend_adapter.gui_logs)):
-            self.network_logs.insert('end', self.backend_adapter.gui_logs[i] + '\n')
-        self.backend_adapter.gui_logs.clear()
-
-        for i in range(len(self.backend_adapter.nw.network_logs)):
-            self.network_logs.insert('end', self.backend_adapter.nw.network_logs[i] + '\n')
-        self.backend_adapter.nw.network_logs.clear()
+    def network_log_append(self, network_log_msg):
+        self.network_logs.insert('end', network_log_msg + '\n')
 
     def start(self):
         self.root.mainloop()

@@ -1,56 +1,111 @@
+"""
+This file defines GUIController, which instantiates a GUIBackend
+and GUIFrontend instance, and the adapters between them. Run this
+file to start mission control.
+"""
+
 import configparser
 
-from logger import Logger, LogLevel
 from model import GUIBackend
 from view import GUIFrontend
 
 
 class GUIController:
+    """
+    The GUIController knows about both GUIFrontend and GUIBackend. It
+    instantiates each and sets up their adapters so they can communicate
+    without breaking decoupling.
+    """
     def __init__(self):
         config = configparser.RawConfigParser()
         config.read('config.ini')
 
-        class back2front_adapter:
+        class Back2FrontAdapter:
+            """
+            An adapter from GUIBackend to GUIFrontend, which allows
+            the backend to call methods on the frontend without depending
+            on implementation details in the frontend.
+            """
             def __init__(self):
                 nonlocal frontend
 
-            def display_msg(self, msg):
+            @staticmethod
+            def display_msg(msg):
+                """
+                Displays a text message in the GUI.
+                @param msg: The message to display.
+                """
                 frontend.network_log_append(msg)
 
-        class front2back_adapter:
+        class Front2BackAdapter:
+            """
+            An adapter from GUIFrontend to GUIBackend, which allows
+            the frontend to call methods on the backend without depending
+            on implementation details in the backend.
+            """
             def __init__(self):
                 nonlocal backend
 
-            def connect(self, ip, port):
+            @staticmethod
+            def connect(ip, port):
+                """
+                Connect to a given port at a given address.
+                @param ip: The IP address to connect to.
+                @param port: The port.
+                """
                 backend.connect(ip, port)
 
-            def disconnect(self):
+            @staticmethod
+            def disconnect():
+                """
+                Disconnect from the server if we are currently connected.
+                """
                 backend.disconnect()
 
-            def send(self, b):
+            @staticmethod
+            def send(b):
+                """
+                Send a byte across the network.
+                @param b: The byte to send.
+                """
                 backend.send(b)
 
-            def get_all_queues(self):
-               return backend.get_all_queues()
+            @staticmethod
+            def get_all_queues():
+                """
+                Get all data queues.
+                @return: A list containing data queues that store sensor data.
+                """
+                return backend.get_all_queues()
 
-            def get_queue(self, name):
+            @staticmethod
+            def get_queue(name):
+                """
+                Get a particular queue by name, e.g. "LC1"
+                @param name: The name of the desired queue.
+                @return: The queue corresponding to the given name.
+                """
                 return backend.get_queue(name)
 
-            def send(self, b):
-                backend.send(b)
-
-        backend = GUIBackend(back2front_adapter(), config)
+        backend = GUIBackend(Back2FrontAdapter(), config)
         self.backend = backend
 
-        frontend = GUIFrontend(front2back_adapter(), config)
+        frontend = GUIFrontend(Front2BackAdapter(), config)
         self.frontend = frontend
 
     def start(self):
+        """
+        Starts the controller by starting the backend and the
+        frontend.
+        """
         self.backend.start()
         self.frontend.start()
 
 
 def main():
+    """
+    Starts mission control by instantiating and starting GUIController.
+    """
     controller = GUIController()
     controller.start()
 

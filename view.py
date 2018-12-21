@@ -1,3 +1,10 @@
+"""
+This file defines GUIFrontend, which contains real-time graphs for
+sensor data and buttons for sending commands to the Pi. The backend
+communicates with the frontend using a Back2FrontAdapter, which is 
+defined in GUIController.
+"""
+
 import random
 from tkinter import ttk
 
@@ -14,6 +21,12 @@ from networking.server_info import ServerInfo
 
 
 class GUIFrontend:
+    """
+    This class is responsible for organizing Tkinter widgets
+    and matplotlib plots. Some of the ways we store and modify
+    data are questionable, but optimizing this isn't really a
+    priority.
+    """
     def __init__(self, backend_adapter, config):
         self.backend_adapter = backend_adapter
         self.config = config
@@ -45,6 +58,11 @@ class GUIFrontend:
         self.root.after(0, self.draw_graphs())
 
     def init_tabs_container(self):
+        """
+        Initializes the tabs container, which is a Notebook
+        instance that contains Frames for each tab.
+        @return: The notebook containing tabs.
+        """
         notebook = ttk.Notebook(self.root)
         mission_control = ttk.Frame(notebook, name="mission_control")
         logging = ttk.Frame(notebook, name="logging")
@@ -67,6 +85,11 @@ class GUIFrontend:
         return notebook
 
     def init_graphs(self):
+        """
+        Initializes the matplotlib graphs.
+        @return: A list of the canvas and figure containing the graphs,
+                 and a list of plots and axes of those plots.
+        """
         figure, axes_list = pyplot.subplots(nrows=2, ncols=2)
         axes_list = axes_list.flatten()
         figure.subplots_adjust(top=.9, bottom=.1, left=.12, right=.95, wspace=.3, hspace=.5)
@@ -90,6 +113,13 @@ class GUIFrontend:
         return canvas, figure, plots, axes_list
 
     def init_mission_control_tab(self):
+        """
+        Initializes the mission control tab, which contains widgets
+        for connecting to an address and port, selecting which graphs
+        to display, and starting ignition, among others.
+        @return: Variables for graph selections, fine control, and data limits,
+                 which affect what is displayed on other frames.
+        """
         control_panel = tk.Frame(background="AliceBlue", width=350, height=625)
         control_panel.grid(row=1, column=2, sticky="NE")
 
@@ -187,6 +217,13 @@ class GUIFrontend:
         return graph_variables, fine_control, set_limits
 
     def init_refresh_settings(self):
+        """
+        Initializes refresh settings to either use Matplotlib
+        built-ins or custom blitting, depending on the configs.
+        @return: An updater function and a graph_area. Only one of these
+                 will be non-None. Ideally exclusively use one method once
+                 we figure out which is better.
+        """
         # plt.show()
         self.canvas.draw()
         if self.config.get("Display", "Use matplotlib Animation") == "True":
@@ -216,6 +253,11 @@ class GUIFrontend:
         return updater, graph_area
 
     def init_logging_tab(self):
+        """
+        Initializes the logging (second) tab, which displays data values
+        for each sensor and network log output.
+        @return: The widgets that contain the log data.
+        """
         data_logs = Pmw.ScrolledText(self.notebook.nametowidget("logging"),
                                      columnheader=1,
                                      usehullsize=1,
@@ -253,10 +295,21 @@ class GUIFrontend:
         return data_logs, network_logs
 
     def init_calibration_tab(self):
+        """
+        Initializes the calibration tab, which is used to conveniently
+        store calibration data points and calculate the calibration curve.
+        """
         # todo
         pass
 
     def animate(self, *args):
+        """
+        The animation function for the GUI, which delegates
+        to updating either the graphs or the log displays.
+        Uses Matplotlib built-in animations.
+        @param args: Unused args that are required by matplotlib
+        @return:
+        """
         # Randomly generate some data to plot
         for queue in self.backend_adapter.get_all_queues():
             length = len(queue) - 1
@@ -268,11 +321,15 @@ class GUIFrontend:
 
         # Only graph if we are on the mission control tab
         if self.notebook.index(self.notebook.select()) == 0:
-            return self.update_graphs()
+            self.update_graphs()
         elif self.notebook.index(self.notebook.select()) == 1:
             self.update_log_displays()
 
     def draw_graphs(self):
+        """
+        Draws graphs using custom blitting and more fine-grain
+        control of the frame rate.
+        """
         self.root.after(self.frame_delay_ms, self.draw_graphs)
         self.animate()
         self.canvas.restore_region(self.graph_area)
@@ -295,6 +352,9 @@ class GUIFrontend:
             self.canvas.blit(self.plots[0].axes.clipbox)
 
     def update_graphs(self):
+        """
+        Updates the graphs using Matplotlib built-ins.
+        """
         for i in range(4):
             # Get which graph the user has selected and get the appropriate queue from the backend
             graph_selection = self.graph_variables[i].get()
@@ -328,7 +388,7 @@ class GUIFrontend:
             self.axes_list[i].set_ylabel(labels[graph_selection][1])
 
             self.plot_selections[i] = graph_selection
-        return self.plots[1], self.plots[2], self.plots[3], self.plots[0],
+        # return self.plots[1], self.plots[2], self.plots[3], self.plots[0],
 
     # def on_closing(self):
     #     if messagebox.askokcancel("Quit", "Do you want to quit?"):
@@ -336,6 +396,9 @@ class GUIFrontend:
         #    self.root.quit()
 
     def update_log_displays(self):
+        """
+        Updates the sensor data part of the log displays.
+        """
         self.data_logs.clear()
         # Create the data rows and the row headers
         num_rows = 20
@@ -361,8 +424,16 @@ class GUIFrontend:
         self.data_logs.tag_add("yellow", '20.0', '20.' + str(len(averages)))
 
     def network_log_append(self, network_log_msg):
+        """
+        Appends a message to the network log display in the
+        logging tab.
+        @param network_log_msg: The message to append.
+        """
         self.network_logs.insert('end', network_log_msg + '\n')
 
     def start(self):
+        """
+        Starts the frontend by starting the tkinter main loop.
+        """
         self.root.mainloop()
         # self.root.after(0, self.draw_graphs())

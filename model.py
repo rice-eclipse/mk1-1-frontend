@@ -1,3 +1,10 @@
+"""
+This file defines GUIBackend, which is responsible for getting
+processing items from the network queue. The frontend communicates
+with the backend using a Front2BackAdapter, which is defined in
+in GUIController
+"""
+
 import csv
 import struct
 import time
@@ -9,6 +16,12 @@ from networking.networker import Networker, ServerInfo
 
 
 class GUIBackend:
+    """
+    This class is responsible for getting data from the network queue
+    and storing them in queues. It also has an instance of Networker
+    for sending data back to the Pi.
+    """
+
     def __init__(self, back2front_adapter, config):
         self.back2front_adapter = back2front_adapter
         self.config = config
@@ -66,39 +79,63 @@ class GUIBackend:
             ServerInfo.PT_INJE_SEND: self.Q_INJE
         }
 
-
     def send_text(self, s):
+        """
+        Sends unicode text across the network.
+        @param s: The string to send.
+        """
         self.nw.send(str.encode(s))
 
     def send_num(self, i):
+        """
+        Sends a number across the network.
+        @param i: The number to send.
+        """
         self.nw.send(int.to_bytes(i, byteorder='big', length=4))
 
-    def send_byte(self, b):
-        self.nw.send(bytes([b]))
-
     def send(self, b):
+        """
+        Sends a byte across the network.
+        @param b: The byte to send.
+        """
         self.nw.send(b)
 
     def connect(self, address, port):
+        """
+        Connects to a given port at a given address.
+        @param address: The address to connect to.
+        @param port: The port.
+        """
         self.nw.update_server_info(addr=address)
         self.nw.connect(addr=address, port=port)
 
-    def ignite(self):
-        # todo send some numbers over
-        self.logger.error("IGNITING!!!")
-        self.nw.send(ServerInfo.NORM_IGNITE)
-
     def disconnect(self):
+        """
+        Disconnects the current network connection.
+        """
         self.nw.disconnect()
 
     def get_all_queues(self):
+        """
+        Returns all queues that are being used to store data.
+        @return: A list of queues containing data.
+        """
         return self.queues
 
     def get_queue(self, name):
+        """
+        Gets a particular queue by its name, e.g. "LC1"
+        @param name: The name of the queue to return.
+        @return: The queue corresponding to the given name.
+        """
         return self.queue_dict[name]
 
     @run_async
     def start(self):
+        """
+        Starts the model by defining a coroutine that continuously
+        processes items in the network queue.
+        """
         while True:
             time.sleep(0.1)
             if not self.nw.connected:
@@ -108,7 +145,9 @@ class GUIBackend:
 
     def _process_recv_message(self):
         """
-        Processes new messages from nw_queue and give them to the appropriate GUI thread.
+        Processes new messages from the network queue and checks that they
+        are valid before placing data in the appropriate queue. In theory also
+        processes other types of messages, but those cases aren't used right now.
         """
         if self.nw_queue.qsize() > 0:
             self.logger.debug("Processing Messages")
@@ -125,22 +164,30 @@ class GUIBackend:
                 if mtype == ServerInfo.ACK_VALUE:
                     pass
                 elif mtype in ServerInfo.filenames.keys():
-                    self.read_payload(message, nbytes, self.queue_dict[mtype], mtype)
+                    self.read_payload(message, nbytes, mtype)
                 elif mtype == ServerInfo.TEXT:
                     print(message.decode('utf-8'))
                 else:
                     self.logger.error("Received incorrect message header type" + str(mtype))
 
-    def read_payload(self, b, nbytes, out_queue, mtype=None):
+    def read_payload(self, b, num_bytes, msg_type=None):
+        """
+        Reads a message corresponding to payload data, logging it to a log
+        file and placing the data in the queue. Calibration happens here.
+        @param b: The byte array containing the message.
+        @param num_bytes: The number of bytes in the message.
+        @param msg_type: The type of message, i.e. which payload.
+        @return: None if the server info has not been initialized.
+        """
         info = self.nw.server_info.info
 
         if not info:
-            return
+            return None
 
-        assert nbytes % info == 0
+        assert num_bytes % info == 0
 
-        if mtype != None and mtype in ServerInfo.filenames.keys():
-            save_file = open('logs/' + ServerInfo.filenames[mtype] + '.log', 'a+')
+        if msg_type is not None and msg_type in ServerInfo.filenames.keys():
+            save_file = open('logs/' + ServerInfo.filenames[msg_type] + '.log', 'a+')
             writer = csv.writer(save_file, delimiter=" ")
             # print("Starting logger for message")
         else:
@@ -148,22 +195,22 @@ class GUIBackend:
             writer = None
 
         bcount = 0
-        while bcount < nbytes:
+        while bcount < num_bytes:
             # d, t = self.payload_from_bytes(b[bcount: bcount + self.info.payload_bytes])
             d, t = struct.unpack("2Q", b[bcount: bcount + info.payload_bytes])
 
             bcount += info.payload_bytes
 
-            if mtype in ServerInfo.calibrations.keys():
-                calibration = ServerInfo.calibrations[mtype]
+            if msg_type in ServerInfo.calibrations.keys():
+                calibration = ServerInfo.calibrations[msg_type]
                 cal = d * calibration[0] + calibration[1]
             else:
                 cal = 0
 
             if not save_file:
                 writer.writerow([str(t), str(d), str(cal)])
-            if out_queue is not None:
-                out_queue.append((cal, t))
+            if self.queue_dict[msg_type] is not None:
+                self.queue_dict[msg_type].append((cal, t))
                 # out_queue.put((cal, t))
 
         if save_file:

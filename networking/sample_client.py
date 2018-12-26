@@ -26,69 +26,37 @@ style.use("dark_background")
 
 # configure the plot
 f = Figure(figsize=(5, 5), dpi=100)
-a = f.add_subplot(111)
+plot = f.add_subplot(111)
 xlist = []
 ylist = []
-
-
-def lshift(lst, number):
-    for i in range(0, len(lst)):
-        if i < len(lst) - number:
-            lst[i] = lst[i + number]
-        else:
-            lst[i] = 0
+plot.plot(xlist, ylist)
 
 
 def animate(i):
-    # could make it update a whole chunk of data instead
-    n = 400
-    m = 2000
-    if y_data.qsize() >= n:
-        if len(ylist) >= m:
-            lshift(ylist, n)
-            lshift(xlist, n)
-            for i in range(0, n):
-                first_byte = y_data.get()
-                pullData = int.from_bytes(first_byte, byteorder="little", signed=True)
+    # while not x_data.empty():
+    #     print("x")
+    #     xlist.append(x_data.get())
+    #
+    # while not y_data.empty():
+    #     print("y")
+    #     ylist.append(y_data.get())
 
-                second_bytes = y_data.get()
-                timestamp = int.from_bytes(second_bytes, byteorder="little", signed=True)
-
-                index = x_data.get()
-                xlist[m - n + i] = index
-                ylist[m - n + i] = timestamp
-                index = index + 1
-                x_data.put(index)
-        else:
-            for i in range(0, n):
-                first_byte = y_data.get()
-                pullData = int.from_bytes(first_byte, byteorder="little", signed=True)
-
-                second_bytes = y_data.get()
-                timestamp = int.from_bytes(second_bytes, byteorder="little", signed=True)
-
-                index = x_data.get()
-                xlist.append(index)
-                ylist.append(timestamp)
-                index = index + 1
-                x_data.put(index)
-        # could timestamp instead
-
-        a.clear()
-        a.plot(xlist, ylist)
-    else:
-        a.plot(xlist, ylist)
+    plot.relim()
+    plot.clear()
+    plot.plot(xlist, ylist)
 
 
-def socketread(s, q):
+def socketread(s):
     while 1:
-        timestamp, _ = s.recvfrom(2)
-        data, _ = s.recvfrom(8)
+        data, _ = s.recvfrom(2)
+        timestamp, _ = s.recvfrom(8)
         if len(timestamp) != 0 and len(data) != 0:
-            q.put(timestamp)
-            q.put(data)
-
-            # print(data)
+            timestamp_int = int.from_bytes(timestamp, byteorder='big', signed=True)
+            data_int = int.from_bytes(data, byteorder='big', signed=True)
+            xlist.append(timestamp_int)
+            ylist.append(data_int)
+            # print("timestamp:", timestamp_int)
+            # print("data:", data_int)
 
 
 # thread for data acquisition
@@ -100,7 +68,7 @@ class myThread1(threading.Thread):
         self.counter = counter
 
     def run(self):
-        socketread(udp, y_data)
+        socketread(udp)
 
 
 # gui set up
@@ -134,7 +102,7 @@ class gui(tk.Tk):
         tk.Button(frame_parent, text="Connect", command=lambda: connect_socket(entry_host.get(), entry_port.get())) \
             .grid(row=0, column=4, padx=(20, 5), pady=5)
 
-        tk.Button(frame_parent, text="Send", command=lambda: test(entry_send.get())) \
+        tk.Button(frame_parent, text="Send", command=lambda: send(entry_send.get())) \
             .grid(row=1, column=4, pady=5)
 
         # Canvas for matplotlib
@@ -149,21 +117,17 @@ class gui(tk.Tk):
 def connect_socket(host, port):
     udp.bind((host, int(port)))
     tcp.connect((host, int(port)))
-    # s.connect((host, int(port)))
-    start_listen()
-
-
-# test function for sending via socket
-def test(entry):
-    tcp.send(str.encode(entry))
-    tcp.send(str.encode("\n"))
-
-
-def start_listen():
+    # Start listening on UDP. Only send on TCP when a button is pressed.
     thread1 = myThread1(1, "Thread-1", 1)
     thread1.start()
 
 
+def send(entry):
+    print("sending:", str.encode(entry))
+    tcp.send(str.encode(entry))
+    tcp.send(str.encode("\n"))
+
+
 gui1 = gui()
-ani = animation.FuncAnimation(f, animate, interval=25)
+ani = animation.FuncAnimation(f, animate, interval=100)
 gui1.run()

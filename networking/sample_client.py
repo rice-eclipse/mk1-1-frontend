@@ -4,6 +4,7 @@ import socket
 import threading
 import tkinter as tk
 from queue import Queue
+from select import select
 
 import matplotlib
 import matplotlib.animation as animation
@@ -16,10 +17,7 @@ matplotlib.use("TKAgg")
 udp = socket.socket(type=socket.SOCK_DGRAM)
 tcp = socket.socket(type=socket.SOCK_STREAM)
 
-# data buffer
-y_data = Queue()
-x_data = Queue()
-x_data.put(0)
+send_queue = Queue()
 
 # plot style
 style.use("dark_background")
@@ -32,31 +30,10 @@ ylist = []
 plot.plot(xlist, ylist)
 
 
-def animate(i):
-    # while not x_data.empty():
-    #     print("x")
-    #     xlist.append(x_data.get())
-    #
-    # while not y_data.empty():
-    #     print("y")
-    #     ylist.append(y_data.get())
-
+def animate(*args):
     plot.relim()
     plot.clear()
     plot.plot(xlist, ylist)
-
-
-def socketread(s):
-    while 1:
-        data, _ = s.recvfrom(2)
-        timestamp, _ = s.recvfrom(8)
-        if len(timestamp) != 0 and len(data) != 0:
-            timestamp_int = int.from_bytes(timestamp, byteorder='big', signed=True)
-            data_int = int.from_bytes(data, byteorder='big', signed=True)
-            xlist.append(timestamp_int)
-            ylist.append(data_int)
-            # print("timestamp:", timestamp_int)
-            # print("data:", data_int)
 
 
 # thread for data acquisition
@@ -68,7 +45,28 @@ class myThread1(threading.Thread):
         self.counter = counter
 
     def run(self):
-        socketread(udp)
+        in_fds = [udp]
+        out_fds = [tcp]
+
+        while True:
+            _input, _output, _except = select(in_fds, out_fds, [])
+
+            for fd in _input:
+                data, _ = fd.recvfrom(2)
+                timestamp, _ = fd.recvfrom(8)
+                if len(timestamp) != 0 and len(data) != 0:
+                    timestamp_int = int.from_bytes(timestamp, byteorder='big', signed=True)
+                    data_int = int.from_bytes(data, byteorder='big', signed=True)
+                    xlist.append(timestamp_int)
+                    ylist.append(data_int)
+                    # print("timestamp:", timestamp_int)
+                    # print("data:", data_int)
+
+            while not send_queue.empty():
+                send_item = send_queue.get()
+                for fd in _output:
+                    print("sending:", str.encode(send_item))
+                    fd.send(str.encode(send_item))
 
 
 # gui set up
@@ -78,7 +76,6 @@ class gui(tk.Tk):
 
         frame_parent = tk.Frame(self)
         frame_parent.grid()
-        # frame_parent.pack(side="top", fill="both", expand=True)
         frame_parent.grid_rowconfigure(0, weight=1)
         frame_parent.grid_columnconfigure(0, weight=1)
 
@@ -102,7 +99,7 @@ class gui(tk.Tk):
         tk.Button(frame_parent, text="Connect", command=lambda: connect_socket(entry_host.get(), entry_port.get())) \
             .grid(row=0, column=4, padx=(20, 5), pady=5)
 
-        tk.Button(frame_parent, text="Send", command=lambda: send(entry_send.get())) \
+        tk.Button(frame_parent, text="Send", command=lambda: send_queue.put(entry_send.get())) \
             .grid(row=1, column=4, pady=5)
 
         # Canvas for matplotlib
@@ -120,12 +117,6 @@ def connect_socket(host, port):
     # Start listening on UDP. Only send on TCP when a button is pressed.
     thread1 = myThread1(1, "Thread-1", 1)
     thread1.start()
-
-
-def send(entry):
-    print("sending:", str.encode(entry))
-    tcp.send(str.encode(entry))
-    tcp.send(str.encode("\n"))
 
 
 gui1 = gui()

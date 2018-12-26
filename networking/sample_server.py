@@ -12,9 +12,9 @@ def main():
     # udp_socket.bind((host, port))
     tcp_socket.bind((host, port))
 
-    # tcp_socket.listen(1)
-    # conn, addr = tcp_socket.accept()
-    # print ("after accept")
+    tcp_socket.listen(1)
+    conn, addr = tcp_socket.accept()
+    print ("after accept")
 
     udp_socket.setblocking(False)
     tcp_socket.setblocking(False)
@@ -27,13 +27,14 @@ def main():
     while True:
         _input, _output, _except = select(in_fds, out_fds, [])
 
-        # for fd in _input:
-        #     data=fd.recv(1024)
-        #     data=data.decode()
-        #     if not data:
-        #         fd.close()
-        #         return None
-        #     print("from client"+str(data).upper())
+        for fd in _input:
+            print ("receiving data")
+            data=fd.recv(1024)
+            data=data.decode()
+            if not data:
+                fd.close()
+                return None
+            print("from client"+str(data).upper())
 
         for fd in _output:
             fd.sendto(i.to_bytes(2, byteorder='big'), (host, port))

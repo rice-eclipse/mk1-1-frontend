@@ -12,7 +12,8 @@ from matplotlib.figure import Figure
 import matplotlib.animation as animation
 from matplotlib import style
 
-s = socket.socket()
+s = socket.socket(type=socket.SOCK_DGRAM)
+s.bind(('127.0.0.1', 1234))
 
 # data buffer
 queue1 = Queue()
@@ -82,8 +83,8 @@ def animate(i):
 
 def socketread(s, q):
     while 1:
-        data = s.recv(2)
-        data1 = s.recv(8)
+        data, addr = s.recvfrom(2)
+        data1, addr = s.recvfrom(8)
         if len(data) != 0 and len(data1) != 0:
             q.put(data)
             q.put(data1)
@@ -130,7 +131,7 @@ class gui(tk.Tk):
 
 # function to connect the socket
 def connect_socket(host, port):
-    s.connect((host, int(port)))
+    # s.connect((host, int(port)))
     start_listen()
 
 

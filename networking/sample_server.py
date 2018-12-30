@@ -3,6 +3,7 @@ import threading
 import time
 from select import select
 
+
 def main():
     host = "127.0.0.1"
     port = 1234
@@ -15,13 +16,21 @@ def main():
 
     tcp_socket.listen(1)
     conn, addr = tcp_socket.accept()
-    print ("Received tcp connection", conn)
+    print("Received tcp connection", conn)
 
     udp_socket.setblocking(False)
     tcp_socket.setblocking(False)
 
     in_fds = [conn]
     out_fds = [udp_socket]
+
+    def re_listen():
+        tcp_socket.listen(1)
+        tcp_socket.setblocking(True)
+        conn, addr = tcp_socket.accept()
+        print("Received tcp connection", conn)
+        tcp_socket.setblocking(False)
+        in_fds.append(conn)
 
     i = 0
     timestamp = 0
@@ -30,22 +39,13 @@ def main():
 
         for fd in _input:
             try:
-                data=fd.recv(1024)
-                data=data.decode()
+                data = fd.recv(1024)
+                data = data.decode()
                 if not data:
                     # When client quits and closes connection
                     in_fds.remove(fd)
                     fd.close()
-                    print ("Client connection has been closed")
-
-
-                    def re_listen():
-                        tcp_socket.listen(1)
-                        tcp_socket.setblocking(True)
-                        conn, addr = tcp_socket.accept()
-                        print ("Received tcp connection", conn)
-                        tcp_socket.setblocking(False)
-                        in_fds.append(conn)
+                    print("Client connection has been closed")
 
                     thread = threading.Thread(target=re_listen)
                     thread.daemon = True
@@ -55,9 +55,13 @@ def main():
                     print("received:", str(data).upper())
             except ConnectionResetError:
                 # When client is closed without closing the connection
-                print ("Connection reset")
                 in_fds.remove(fd)
                 fd.close()
+                print("Connection reset")
+
+                thread = threading.Thread(target=re_listen)
+                thread.daemon = True
+                thread.start()
 
         for fd in _output:
             fd.sendto(i.to_bytes(2, byteorder='big'), (host, port))

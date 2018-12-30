@@ -125,7 +125,6 @@ def connect_socket(host, port):
     if not tcp:
         tcp = socket.socket(type=socket.SOCK_STREAM)
 
-    print (type(udp))
     udp.bind((host, int(port)))
     tcp.connect((host, int(port)))
     in_fds.append(udp)
@@ -134,6 +133,7 @@ def connect_socket(host, port):
     # Start listening on UDP. Only send on TCP when a button is pressed.
     thread1 = myThread1(1, "Thread-1", 1)
     thread1.start()
+
 
 def disconnect():
     global udp

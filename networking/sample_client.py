@@ -14,8 +14,13 @@ from matplotlib.figure import Figure
 
 matplotlib.use("TKAgg")
 
-udp = socket.socket(type=socket.SOCK_DGRAM)
-tcp = socket.socket(type=socket.SOCK_STREAM)
+# udp = socket.socket(type=socket.SOCK_DGRAM)
+# tcp = socket.socket(type=socket.SOCK_STREAM)
+udp = None
+tcp = None
+
+in_fds = []
+out_fds = []
 
 send_queue = Queue()
 
@@ -45,10 +50,7 @@ class myThread1(threading.Thread):
         self.counter = counter
 
     def run(self):
-        in_fds = [udp]
-        out_fds = [tcp]
-
-        while True:
+        while in_fds or out_fds:
             _input, _output, _except = select(in_fds, out_fds, [])
 
             for fd in _input:
@@ -94,13 +96,16 @@ class gui(tk.Tk):
         entry_port.insert(tk.END, "1234")
 
         entry_send = tk.Entry(frame_parent)
-        entry_send.grid(row=1, column=3)
+        entry_send.grid(row=1, column=1)
 
         tk.Button(frame_parent, text="Connect", command=lambda: connect_socket(entry_host.get(), entry_port.get())) \
-            .grid(row=0, column=4, padx=(20, 5), pady=5)
+            .grid(row=0, column=4, padx=5, pady=5)
+
+        tk.Button(frame_parent, text="Disconnect", command=lambda: disconnect()) \
+            .grid(row=0, column=5, padx=(20, 5), pady=5)
 
         tk.Button(frame_parent, text="Send", command=lambda: send_queue.put(entry_send.get())) \
-            .grid(row=1, column=4, pady=5)
+            .grid(row=1, column=2, pady=5)
 
         # Canvas for matplotlib
         canvas = FigureCanvasTkAgg(f, self)
@@ -112,11 +117,34 @@ class gui(tk.Tk):
 
 # function to connect the socket
 def connect_socket(host, port):
+    global udp
+    global tcp
+
+    if not udp:
+        udp = socket.socket(type=socket.SOCK_DGRAM)
+    if not tcp:
+        tcp = socket.socket(type=socket.SOCK_STREAM)
+
+    print (type(udp))
     udp.bind((host, int(port)))
     tcp.connect((host, int(port)))
+    in_fds.append(udp)
+    out_fds.append(tcp)
+
     # Start listening on UDP. Only send on TCP when a button is pressed.
     thread1 = myThread1(1, "Thread-1", 1)
     thread1.start()
+
+def disconnect():
+    global udp
+    global tcp
+
+    in_fds.remove(udp)
+    out_fds.remove(tcp)
+    udp.close()
+    tcp.close()
+    udp = None
+    tcp = None
 
 
 gui1 = gui()

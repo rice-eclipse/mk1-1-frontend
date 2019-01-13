@@ -29,20 +29,17 @@ class GUIBackend:
 
         self.nw_queue = Queue()
 
-        backend_logs = ["Backend Logs Ready"]
-        network_logs = ["Network Logs Ready"]
-
         self.logger = Logger(name='backend',
                              display_func=self.back2front_adapter.display_msg,
-                             log_list=backend_logs,
                              level=LogLevel.DEBUG,
-                             outfile='backend.log')
+                             outfile='backend.log',
+                             display_log=False)
 
         nw_logger = Logger(name='networker',
                            display_func=self.back2front_adapter.display_msg,
-                           log_list=network_logs,
                            level=LogLevel.DEBUG,
-                           outfile='networker.log')
+                           outfile='networker.log',
+                           display_log=True)
 
         self.nw = Networker(nw_logger, self.config, queue=self.nw_queue)
 
@@ -180,11 +177,12 @@ class GUIBackend:
         @return: None if the server info has not been initialized.
         """
         info = self.nw.server_info.info
+        payload_bytes = info.payload_bytes
 
-        if not info:
+        if not payload_bytes:
             return None
 
-        assert num_bytes % info == 0
+        assert num_bytes % payload_bytes == 0
 
         if msg_type is not None and msg_type in ServerInfo.filenames.keys():
             save_file = open('logs/' + ServerInfo.filenames[msg_type] + '.log', 'a+')

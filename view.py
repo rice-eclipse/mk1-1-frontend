@@ -5,7 +5,7 @@ communicates with the frontend using a Back2FrontAdapter, which is
 defined in GUIController.
 """
 
-import random
+# import random
 from tkinter import ttk
 
 import Pmw
@@ -311,10 +311,10 @@ class GUIFrontend:
         @return:
         """
         # Randomly generate some data to plot
-        for queue in self.backend_adapter.get_all_queues():
-            length = len(queue) - 1
-            for j in range(1, 11):
-                queue.append((random.randint(0, 1000), queue[length][1] + j))
+        # for queue in self.backend_adapter.get_all_queues():
+        #     length = len(queue) - 1
+        #     for j in range(1, 11):
+        #         queue.append((random.randint(0, 1000), queue[length][1] + j))
                 # queue.append((queue[length][1] + j, queue[length][1] + j))
             # print (queue)
         # print (self.backend.queues[0][-10:])

@@ -184,13 +184,13 @@ class Networker:
         else:
             message = self._recv(nbytes)
 
-        if (message is not None):
-            if (nbytes <= 64):
-                self.logger.debug("Received Full Message: Type:" + str(htype) +
-                           " Nbytes:" + str(nbytes) + " message" + str(message))
-            else:
-                self.logger.debug("Received Full Message: Type:" + str(htype) +
-                                  " Nbytes:" + str(nbytes))
+        # if (message is not None):
+        #     if (nbytes <= 64):
+        #         self.logger.debug("Received Full Message: Type:" + str(htype) +
+        #                    " Nbytes:" + str(nbytes) + " message" + str(message))
+        #     else:
+        #         self.logger.debug("Received Full Message: Type:" + str(htype) +
+        #                           " Nbytes:" + str(nbytes))
 
         time.sleep(0.01)
 

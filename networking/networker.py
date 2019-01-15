@@ -1,4 +1,5 @@
 import socket
+import struct
 import threading
 
 from queue import Queue
@@ -10,7 +11,6 @@ import time
 
 from logger import LogLevel, Logger
 from networking.server_info import*
-from config import config
 
 # MAJOR TODO move this networker to processing requests on its own thread and then let it attempt reconnection.
 
@@ -49,7 +49,9 @@ class Networker:
 
         return tcp_sock, udp_sock
 
-    def __init__(self, queue=None, loglevel=LogLevel.DEBUG):
+    def __init__(self, logger, config, queue=None):
+        self.logger = logger
+        self.config = config
         self.tcp_sock, self.udp_sock = self.make_socket()
         self.recv_sock = None
         self.addr = None
@@ -63,12 +65,9 @@ class Networker:
         self.thr = Networker.NWThread(1, 'NWThread', 1, self)
         self.thr.start()
 
-        self.network_logs = ["Network Logs Ready"]
-        self.logger = Logger(name='networker', log_list=self.network_logs, level=loglevel, outfile='networker.log')
-
         self.server_info = ServerInfo()
 
-        self.logger.info("Initialized")
+        # self.logger.info("Initialized")
 
     def update_server_info(self, addr):
         host = socket.gethostbyaddr(addr)[0]
@@ -100,7 +99,7 @@ class Networker:
         while self.trying_connect:
             try:
                 self.tcp_sock.connect((self.addr, int(self.port)))
-                if (config.get("Server", "Protocol") == "UDP"):
+                if (self.config.get("Server", "Protocol") == "UDP"):
                     self.udp_sock.bind(('', int(self.port)))
                     self.recv_sock = self.udp_sock
                     self.logger.error("Receiving on UDP")
@@ -185,13 +184,13 @@ class Networker:
         else:
             message = self._recv(nbytes)
 
-        if (message is not None):
-            if (nbytes <= 64):
-                self.logger.debug("Received Full Message: Type:" + str(htype) +
-                           " Nbytes:" + str(nbytes) + " message" + str(message))
-            else:
-                self.logger.debug("Received Full Message: Type:" + str(htype) +
-                                  " Nbytes:" + str(nbytes))
+        # if (message is not None):
+        #     if (nbytes <= 64):
+        #         self.logger.debug("Received Full Message: Type:" + str(htype) +
+        #                    " Nbytes:" + str(nbytes) + " message" + str(message))
+        #     else:
+        #         self.logger.debug("Received Full Message: Type:" + str(htype) +
+        #                           " Nbytes:" + str(nbytes))
 
         time.sleep(0.01)
 

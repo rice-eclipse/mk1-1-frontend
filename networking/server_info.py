@@ -3,8 +3,6 @@
 # Information on the values of headers sent:
 import csv
 import struct
-from config import config
-
 
 class ServerInfo:
     """
@@ -52,9 +50,6 @@ class ServerInfo:
         TC2_SEND: 'TC2',
         TC3_SEND: 'TC3'
     }
-
-    c = config.get("Calibration", "LC1_SEND").split(",")
-    print(tuple(c))
 
     # calibrations = {
     #     LC1_SEND: (1, 0),
@@ -119,13 +114,15 @@ class ServerInfo:
     def read_payload(self, b, nbytes, out_queue, mtype=None):
         assert nbytes % self.info.payload_bytes == 0
 
-        if (mtype != None and mtype in ServerInfo.filenames.keys()):
-            save_file = open('logs/' + ServerInfo.filenames[mtype] + '.log', 'a+')
-            writer = csv.writer(save_file, delimiter=" ")
-            # print("Starting logger for message")
-        else:
-            save_file = None
-            writer = None
+        # if (mtype != None and mtype in ServerInfo.filenames.keys()):
+        #     save_file = open('logs/' + ServerInfo.filenames[mtype] + '.log', 'a+')
+        #     writer = csv.writer(save_file, delimiter=" ")
+        #     # print("Starting logger for message")
+        # else:
+        #     save_file = None
+        #     writer = None
+        save_file = None
+        writer = None
 
         bcount = 0
         while bcount < nbytes:

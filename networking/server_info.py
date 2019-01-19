@@ -1,9 +1,5 @@
 # A file used to store information related to the information sent by the server on the PI:
 
-# Information on the values of headers sent:
-import csv
-import struct
-
 class ServerInfo:
     """
     A class that contains all the configuration info, like if we're connected to a pi or not.
@@ -11,7 +7,6 @@ class ServerInfo:
     """
 
     def __init__(self):
-        self.on_pi = True
         self.info = ServerInfo.PiInfo
         pass
 

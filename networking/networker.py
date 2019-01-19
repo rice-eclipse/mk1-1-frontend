@@ -1,9 +1,9 @@
 import socket
+import struct
 import threading
 
 from queue import Queue
 
-# A class used to handle all the networking:
 import sys
 
 import time

@@ -46,7 +46,7 @@ def main():
         tcp_socket.listen(1)
         tcp_socket.setblocking(True)
         new_conn, _ = tcp_socket.accept()
-        print("Received tcp connection", conn)
+        print("Received tcp connection", new_conn)
         tcp_socket.setblocking(False)
         in_fds.append(new_conn)
 
@@ -83,17 +83,19 @@ def main():
 
         for fd in _output:
             # Send a header
-            fd.sendto(header_type.to_bytes(1, byteorder='little'), (host, port))
-            fd.sendto(pad.to_bytes(7, byteorder='little'), (host, port))
-            fd.sendto(nbytes.to_bytes(4, byteorder='little'), (host, port))
-            fd.sendto(pad.to_bytes(4, byteorder='little'), (host, port))
-
-            time.sleep(0.05)
+            message = bytes([])
+            message += header_type.to_bytes(1, byteorder='little')
+            message += pad.to_bytes(7, byteorder='little')
+            message += nbytes.to_bytes(4, byteorder='little')
+            message += pad.to_bytes(4, byteorder='little')
+            fd.sendto(message, (host, port))
 
             # Send some data
-            fd.sendto(i.to_bytes(2, byteorder='little'), (host, port))
-            fd.sendto(pad.to_bytes(6, byteorder='little'), (host, port))
-            fd.sendto(timestamp.to_bytes(8, byteorder='little'), (host, port))
+            message = bytes([])
+            message += i.to_bytes(2, byteorder='little')
+            message += pad.to_bytes(6, byteorder='little')
+            message += timestamp.to_bytes(8, byteorder='little')
+            fd.sendto(message, (host, port))
 
             # Old code for use with sample_client.py
             # fd.sendto(i.to_bytes(2, byteorder='big'), (host, port))

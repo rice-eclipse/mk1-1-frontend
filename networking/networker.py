@@ -1,11 +1,10 @@
 """
-This fine defines Networker and NWThread, which handle networking
+This file defines Networker and NWThread, which handle networking
 for mission control. It is used by GUIBackend defined in model.py.
 """
 
 import socket
 import struct
-import threading
 
 from queue import Queue
 
@@ -14,9 +13,8 @@ import sys
 import time
 from select import select
 
+from concurrency import run_async
 from networking.server_info import*
-
-# MAJOR TODO move this networker to processing requests on its own thread and then let it attempt reconnection.
 
 
 class Networker:
@@ -25,38 +23,28 @@ class Networker:
     connect, disconnect, send, and receive for the sockets
     we are using.
     """
-    class NWThread(threading.Thread):
+
+    @run_async
+    def run(self):
         """
-        A thread that uses select to continuously
-        send and receive data.
+        Start interacting with the network on a new thread.
         """
+        while self.connected and self.in_fds or self.out_fds:
+            # print(self.nw.in_fds, self.nw.out_fds)
+            _input, _output, _except = select(self.in_fds, self.out_fds, [])
 
-        def __init__(self, thread_id, name, counter, nw):
+            # This happens if we disconnect. This thread will end
+            # and a new one will be started.
+            if -1 in _input or -1 in _output:
+                return
 
-            assert(isinstance(nw, Networker))
+            t, nb, m = self.read_message()
+            if t is not None:
+                self.out_queue.put((t, nb, m))
 
-            threading.Thread.__init__(self)
-            self.threadID = thread_id
-            self.name = name
-            self.counter = counter
-            self.nw = nw
-
-        def run(self):
-            """
-            Start the
-            """
-            while self.nw.connected and self.nw.in_fds or self.nw.out_fds:
-                # print(self.nw.in_fds, self.nw.out_fds)
-                _input, _output, _except = select(self.nw.in_fds, self.nw.out_fds, [])
-
-                for _ in _input:
-                    t, nb, m = self.nw.read_message()
-                    if t is not None:
-                        self.nw.out_queue.put((t, nb, m))
-
-                while not self.nw.send_queue.empty():
-                    send_item = self.nw.send_queue.get()
-                    self.nw.send(send_item)
+            while not self.send_queue.empty():
+                send_item = self.send_queue.get()
+                self.send(send_item)
 
     def make_socket(self):
         """
@@ -66,11 +54,11 @@ class Networker:
         remember to set these sockets to None after you
         close them so you can re-create them here.
         """
-        if not self.tcp_sock:
+        if self.tcp_sock is None:
             self.tcp_sock = socket.socket(type=socket.SOCK_STREAM)
             self.tcp_sock.settimeout(50)
 
-        if not self.udp_sock:
+        if self.udp_sock is None:
             self.udp_sock = socket.socket(type=socket.SOCK_DGRAM)
             self.udp_sock.settimeout(50)
 
@@ -79,7 +67,6 @@ class Networker:
         self.config = config
         self.tcp_sock = None
         self.udp_sock = None
-        self.make_socket()
         self.recv_sock = None
         self.addr = None
         self.port = None
@@ -88,7 +75,6 @@ class Networker:
         self.out_queue = queue
         self.send_queue = Queue()
 
-        self.thr = Networker.NWThread(1, 'NWThread', 1, self)
         self.in_fds = []
         self.out_fds = []
 
@@ -129,6 +115,7 @@ class Networker:
             return
 
         self.trying_connect = True
+        self.make_socket()
         while self.trying_connect:
             # noinspection PyBroadException
             try:
@@ -144,12 +131,14 @@ class Networker:
                     self.logger.error("Receiving on TCP")
                     # TODO this doesn't work
                 self.in_fds = [self.recv_sock]
-                self.thr.start()
             except socket.timeout:
                 self.logger.error("Connect timed out.")
                 sys.exit(0)
             except OSError as e:
                 self.logger.error("Connection failed. OSError:" + e.strerror)
+                self.trying_connect = False
+            except RuntimeError as e:
+                self.logger.error("Connection failed. RuntimeError: " + str(e))
                 self.trying_connect = False
             except BaseException:
                 self.logger.error("Connect: Unexpected error:" + str(sys.exc_info()[0]))
@@ -159,6 +148,7 @@ class Networker:
                 self.logger.error("Successfully connected. Using info " + self.server_info.info.__name__)
                 self.trying_connect = False
                 self.connected = True
+                self.run()
                 # TODO make this variable not some hacky global.
 
     def disconnect(self):
@@ -171,16 +161,13 @@ class Networker:
             return
 
         self.connected = False
-        self.logger.warn("Socket disconnecting:")
+        self.logger.warn("Socket disconnecting")
         self.tcp_sock.close()
         self.udp_sock.close()
         self.tcp_sock = None
         self.udp_sock = None
         self.in_fds = []
         self.out_fds = []
-
-        # Recreate the socket so that we aren't screwed.
-        self.make_socket()
 
     def send(self, message):
         """
@@ -224,9 +211,9 @@ class Networker:
             message = None
         else:
             # message = self._recv(nbytes)
-            # TODO
+            # TODO is this always 16?
             message = self._recv(16)
-            print(struct.unpack("2Q", message))
+            # print(struct.unpack("2Q", message))
 
         # if (message is not None):
         #     if (nbytes <= 64):
@@ -251,7 +238,7 @@ class Networker:
 
         htype, nbytes = struct.unpack(self.server_info.info.header_format_string, b)
 
-        print("header", htype, nbytes)
+        # print("header", htype, nbytes)
         self.logger.debugv("Received message header: Type:" + str(htype) + " Nbytes:" + str(nbytes))
 
         return htype, nbytes
@@ -287,7 +274,7 @@ class Networker:
             self.logger.error("Read: Unexpected error:" + str(sys.exc_info()[0]))
             self.disconnect()
         else:
-            print(outb)
+            # print(outb)
             return outb
 
         return bytes([])

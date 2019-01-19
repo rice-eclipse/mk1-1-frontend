@@ -1,5 +1,4 @@
 import socket
-import struct
 import threading
 
 from queue import Queue
@@ -9,7 +8,6 @@ import sys
 
 import time
 
-from logger import LogLevel, Logger
 from networking.server_info import*
 
 # MAJOR TODO move this networker to processing requests on its own thread and then let it attempt reconnection.
@@ -17,12 +15,12 @@ from networking.server_info import*
 
 class Networker:
     class NWThread(threading.Thread):
-        def __init__(self, threadID, name, counter, nw):
+        def __init__(self, thread_id, name, counter, nw):
 
             assert(isinstance(nw, Networker))
 
             threading.Thread.__init__(self)
-            self.threadID = threadID
+            self.threadID = thread_id
             self.name = name
             self.counter = counter
             self.nw = nw
@@ -35,34 +33,37 @@ class Networker:
                 # Try to receive a message:
                 t, nb, m = self.nw.read_message()
                 # print(t)
-                if (t is not None):
+                if t is not None:
                     self.nw.out_queue.put((t, nb, m))
 
-    @staticmethod
-    def make_socket():
-        tcp_sock = socket.socket()
-        udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    def make_socket(self):
+        if not self.tcp_sock:
+            self.tcp_sock = socket.socket(type=socket.SOCK_STREAM)
+            self.tcp_sock.settimeout(50)
 
-        # 50ms timeout, with the intent of giving just a bit of time if receiving.
-        tcp_sock.settimeout(5)
-        udp_sock.settimeout(5)
+        if not self.udp_sock:
+            self.udp_sock = socket.socket(type=socket.SOCK_DGRAM)
+            self.udp_sock.settimeout(50)
 
-        return tcp_sock, udp_sock
-
-    def __init__(self, logger, config, queue=None):
+    def __init__(self, logger, config, queue):
         self.logger = logger
         self.config = config
-        self.tcp_sock, self.udp_sock = self.make_socket()
+        self.tcp_sock = None
+        self.udp_sock = None
+        self.make_socket()
         self.recv_sock = None
         self.addr = None
         self.port = None
         self.connected = False
         self.trying_connect = False
         # TODO for now we only have the data receiving on a separate thread because that was straightforward:
-        self.out_queue = queue if queue is not None else Queue()
+        self.out_queue = queue
+        self.send_queue = Queue()
         self.conn_event = threading.Event()
 
         self.thr = Networker.NWThread(1, 'NWThread', 1, self)
+        self.in_fds = []
+        self.out_fds = []
         self.thr.start()
 
         self.server_info = ServerInfo()
@@ -70,6 +71,11 @@ class Networker:
         # self.logger.info("Initialized")
 
     def update_server_info(self, addr):
+        """
+        Updates the server info information to be compatible
+        with either the Pi or the local machine.
+        @param addr: The address we are connected to.
+        """
         host = socket.gethostbyaddr(addr)[0]
         if host != 'raspberry' and host != 'Pi01':
             self.server_info.info = ServerInfo.OtherInfo
@@ -99,20 +105,23 @@ class Networker:
         while self.trying_connect:
             try:
                 self.tcp_sock.connect((self.addr, int(self.port)))
-                if (self.config.get("Server", "Protocol") == "UDP"):
-                    self.udp_sock.bind(('', int(self.port)))
+                self.out_fds = [self.tcp_sock]
+                self.logger.error("Transmitting on TCP")
+                if self.config.get("Server", "Protocol") == "UDP":
+                    self.udp_sock.bind((self.addr, int(self.port)))
                     self.recv_sock = self.udp_sock
                     self.logger.error("Receiving on UDP")
                 else:
                     self.recv_sock = self.tcp_sock
                     self.logger.error("Receiving on TCP")
+                self.in_fds = [self.recv_sock]
             except socket.timeout:
                 self.logger.error("Connect timed out.")
                 sys.exit(0)
             except OSError as e:
                 self.logger.error("Connection failed. OSError:" + e.strerror)
                 self.trying_connect = False
-            except:
+            except BaseException:
                 self.logger.error("Connect: Unexpected error:" + str(sys.exc_info()[0]))
                 self.trying_connect = False
             else:
@@ -125,7 +134,7 @@ class Networker:
 
     def disconnect(self):
         """
-        Disconnects and resets and connection information.
+        Disconnects and resets the connection information.
         :return: None
         """
         if not self.connected:
@@ -137,9 +146,11 @@ class Networker:
         self.tcp_sock.close()
         self.udp_sock.close()
         self.recv_sock = None
+        self.in_fds = []
+        self.out_fds = []
 
         # Recreate the socket so that we aren't screwed.
-        self.tcp_sock, self.udp_sock = self.make_socket()
+        self.make_socket()
 
     def send(self, message):
         """
@@ -148,7 +159,7 @@ class Networker:
         :return: True if no exceptions were thrown:
         """
         # TODO logging levels?
-        self.logger.debug("Sending message:")
+        self.logger.debug("Sending message: " + str(message))
         # TODO proper error handling?
         try:
             self.tcp_sock.send(message)
@@ -158,7 +169,7 @@ class Networker:
         except OSError as e:
             self.logger.error("Connection failed. OSError:" + e.strerror)
             self.disconnect()
-        except:
+        except BaseException:
             self.logger.error("Unexpected error:" + str(sys.exc_info()[0]))
             self.disconnect()
         else:
@@ -213,11 +224,12 @@ class Networker:
 
     def _recv(self, nbytes):
         """
-        Receives a message of length nbytes from the socket. Will retry until all bytes have been received.
+        Receives a message of length nbytes from the socket.
+        Will retry until all bytes have been received.
         :param nbytes: The number of bytes to receive.
         :return: The bytes.
         """
-        #print("Attempting to read " + str(nbytes) + " bytes")
+        # print("Attempting to read " + str(nbytes) + " bytes")
         outb = bytes([])
         bcount = 0
         try:
@@ -237,7 +249,7 @@ class Networker:
         except OSError as e:
             self.logger.error("Read failed. OSError:" + e.strerror)
             self.disconnect()
-        except:
+        except BaseException:
             self.logger.error("Read: Unexpected error:" + str(sys.exc_info()[0]))
             self.disconnect()
         else:

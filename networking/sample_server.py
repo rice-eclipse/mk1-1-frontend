@@ -34,6 +34,10 @@ def main():
 
     i = 0
     timestamp = 0
+    header_type = 9
+    nbytes = 16
+    pad = 0
+
     while True:
         _input, _output, _except = select(in_fds, out_fds, [])
 
@@ -64,13 +68,24 @@ def main():
                 thread.start()
 
         for fd in _output:
-            fd.sendto(i.to_bytes(2, byteorder='big'), (host, port))
-            fd.sendto(timestamp.to_bytes(8, byteorder='big'), (host, port))
+            # Send a header
+            fd.sendto(header_type.to_bytes(1, byteorder='little'), (host, port))
+            fd.sendto(pad.to_bytes(7, byteorder='little'), (host, port))
+            fd.sendto(nbytes.to_bytes(4, byteorder='little'), (host, port))
+            fd.sendto(pad.to_bytes(4, byteorder='little'), (host, port))
+
             time.sleep(0.05)
-            i = (i + 1) % 100
+
+            # Send some data
+            fd.sendto(i.to_bytes(2, byteorder='little'), (host, port))
+            fd.sendto(pad.to_bytes(6, byteorder='little'), (host, port))
+            fd.sendto(timestamp.to_bytes(8, byteorder='little'), (host, port))
+            # fd.sendto(pad.to_bytes(8, byteorder='little'), (host, port))
+
+            i = (i + 10) % 1000
             timestamp = timestamp + 1
 
-        time.sleep(.01)
+        time.sleep(.001)
 
 
 if __name__ == '__main__':

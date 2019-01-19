@@ -7,6 +7,7 @@ from queue import Queue
 import sys
 
 import time
+from select import select
 
 from networking.server_info import*
 
@@ -26,15 +27,18 @@ class Networker:
             self.nw = nw
 
         def run(self):
-            while True:
-                # Ensure we are connected:
-                self.nw.conn_event.wait()
+            while self.nw.in_fds or self.nw.out_fds:
+                # print(self.nw.in_fds, self.nw.out_fds)
+                _input, _output, _except = select(self.nw.in_fds, self.nw.out_fds, [])
 
-                # Try to receive a message:
-                t, nb, m = self.nw.read_message()
-                # print(t)
-                if t is not None:
-                    self.nw.out_queue.put((t, nb, m))
+                for _ in _input:
+                    t, nb, m = self.nw.read_message()
+                    if t is not None:
+                        self.nw.out_queue.put((t, nb, m))
+
+                while not self.nw.send_queue.empty():
+                    send_item = self.nw.send_queue.get()
+                    self.nw.send(send_item)
 
     def make_socket(self):
         if not self.tcp_sock:
@@ -59,12 +63,10 @@ class Networker:
         # TODO for now we only have the data receiving on a separate thread because that was straightforward:
         self.out_queue = queue
         self.send_queue = Queue()
-        self.conn_event = threading.Event()
 
         self.thr = Networker.NWThread(1, 'NWThread', 1, self)
         self.in_fds = []
         self.out_fds = []
-        self.thr.start()
 
         self.server_info = ServerInfo()
 
@@ -114,7 +116,9 @@ class Networker:
                 else:
                     self.recv_sock = self.tcp_sock
                     self.logger.error("Receiving on TCP")
+                    # TODO this doesn't work
                 self.in_fds = [self.recv_sock]
+                self.thr.start()
             except socket.timeout:
                 self.logger.error("Connect timed out.")
                 sys.exit(0)
@@ -130,7 +134,6 @@ class Networker:
                 self.trying_connect = False
                 self.connected = True
                 # TODO make this variable not some hacky global.
-                self.conn_event.set()
 
     def disconnect(self):
         """
@@ -140,7 +143,6 @@ class Networker:
         if not self.connected:
             return
 
-        self.conn_event.clear()
         self.connected = False
         self.logger.warn("Socket disconnecting:")
         self.tcp_sock.close()
@@ -159,7 +161,7 @@ class Networker:
         :return: True if no exceptions were thrown:
         """
         # TODO logging levels?
-        self.logger.debug("Sending message: " + str(message))
+        self.logger.info("Sending message: " + str(message))
         # TODO proper error handling?
         try:
             self.tcp_sock.send(message)
@@ -173,7 +175,6 @@ class Networker:
             self.logger.error("Unexpected error:" + str(sys.exc_info()[0]))
             self.disconnect()
         else:
-            self.logger.info("Message sent")
             return True
 
         return False
@@ -193,7 +194,10 @@ class Networker:
         if nbytes is None or nbytes == 0:
             message = None
         else:
-            message = self._recv(nbytes)
+            # message = self._recv(nbytes)
+            # TODO
+            message = self._recv(16)
+            print(struct.unpack("2Q", message))
 
         # if (message is not None):
         #     if (nbytes <= 64):
@@ -213,11 +217,12 @@ class Networker:
         :return: The header type, The number of bytes
         """
         b = self._recv(self.server_info.info.header_size)
-        if (len(b) == 0):
+        if len(b) == 0:
             return None, None
 
         htype, nbytes = struct.unpack(self.server_info.info.header_format_string, b)
 
+        print("header", htype, nbytes)
         self.logger.debugv("Received message header: Type:" + str(htype) + " Nbytes:" + str(nbytes))
 
         return htype, nbytes
@@ -253,6 +258,7 @@ class Networker:
             self.logger.error("Read: Unexpected error:" + str(sys.exc_info()[0]))
             self.disconnect()
         else:
+            print(outb)
             return outb
 
         return bytes([])

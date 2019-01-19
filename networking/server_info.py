@@ -51,19 +51,6 @@ class ServerInfo:
         TC3_SEND: 'TC3'
     }
 
-    # calibrations = {
-    #     LC1_SEND: (1, 0),
-    #     LC_MAIN_SEND: (0.1365, -66.885),
-    #     LC2_SEND: (1, 0),
-    #     LC3_SEND: (1, 0),
-    #     PT_FEED_SEND: (-0.275787487, 1069),
-    #     PT_COMB_SEND: (-0.2810327855, 1068),
-    #     PT_INJE_SEND: (-0.2782331275, 1045),
-    #     TC1_SEND: (0.1611, -250),
-    #     TC2_SEND: (0.1611, -250),
-    #     TC3_SEND: (0.1611, -250)
-    # }
-
     calibrations = {
         LC_MAIN_SEND: (-.03159, 105),
         LC1_SEND: (.0093895, 0),
@@ -110,39 +97,3 @@ class ServerInfo:
         payload_bytes = 16
 
         header_format_string = "c7xi4x"
-
-    def read_payload(self, b, nbytes, out_queue, mtype=None):
-        assert nbytes % self.info.payload_bytes == 0
-
-        # if (mtype != None and mtype in ServerInfo.filenames.keys()):
-        #     save_file = open('logs/' + ServerInfo.filenames[mtype] + '.log', 'a+')
-        #     writer = csv.writer(save_file, delimiter=" ")
-        #     # print("Starting logger for message")
-        # else:
-        #     save_file = None
-        #     writer = None
-        save_file = None
-        writer = None
-
-        bcount = 0
-        while bcount < nbytes:
-            # d, t = self.payload_from_bytes(b[bcount: bcount + self.info.payload_bytes])
-            d, t = struct.unpack("2Q", b[bcount: bcount + self.info.payload_bytes])
-
-            bcount += self.info.payload_bytes
-            # TODO handle multiple out queues
-
-            if mtype in ServerInfo.calibrations.keys():
-                calib = ServerInfo.calibrations[mtype]
-                cal = d * calib[0] + calib[1]
-            else:
-                cal = 0
-
-            if save_file != None:
-                writer.writerow([str(t), str(d), str(cal)])
-            if out_queue is not None:
-                out_queue.append((cal, t))
-                # out_queue.put((cal, t))
-
-        if (save_file is not None):
-            save_file.close()

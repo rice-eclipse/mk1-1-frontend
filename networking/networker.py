@@ -1,3 +1,8 @@
+"""
+This fine defines Networker and NWThread, which handle networking
+for mission control. It is used by GUIBackend defined in model.py.
+"""
+
 import socket
 import struct
 import threading
@@ -15,7 +20,17 @@ from networking.server_info import*
 
 
 class Networker:
+    """
+    The networker class abstracts network processes such as
+    connect, disconnect, send, and receive for the sockets
+    we are using.
+    """
     class NWThread(threading.Thread):
+        """
+        A thread that uses select to continuously
+        send and receive data.
+        """
+
         def __init__(self, thread_id, name, counter, nw):
 
             assert(isinstance(nw, Networker))
@@ -27,7 +42,10 @@ class Networker:
             self.nw = nw
 
         def run(self):
-            while self.nw.in_fds or self.nw.out_fds:
+            """
+            Start the
+            """
+            while self.nw.connected and self.nw.in_fds or self.nw.out_fds:
                 # print(self.nw.in_fds, self.nw.out_fds)
                 _input, _output, _except = select(self.nw.in_fds, self.nw.out_fds, [])
 
@@ -41,6 +59,13 @@ class Networker:
                     self.nw.send(send_item)
 
     def make_socket(self):
+        """
+        Creates a tcp and udp socket if they do not already
+        exist. These sockets are created but may not actually
+        be used. See connect() for how they are used. Also,
+        remember to set these sockets to None after you
+        close them so you can re-create them here.
+        """
         if not self.tcp_sock:
             self.tcp_sock = socket.socket(type=socket.SOCK_STREAM)
             self.tcp_sock.settimeout(50)
@@ -60,7 +85,6 @@ class Networker:
         self.port = None
         self.connected = False
         self.trying_connect = False
-        # TODO for now we only have the data receiving on a separate thread because that was straightforward:
         self.out_queue = queue
         self.send_queue = Queue()
 
@@ -86,12 +110,13 @@ class Networker:
 
     def connect(self, addr=None, port=None):
         """
-        Connects to a given address and port or just tries to reconnect (if args are none or same).
-        :param addr: The address to connect
-        :param port: The port to connect to.
-        :return: None
+        Connects to a given address and port or just tries to
+        reconnect (if args are none or same).
+        @param addr: The address to connect to.
+        @param port: The port to connect to.
+        @return: None
         """
-        # First check if the port or address have changed and if so we should disconnect.
+        # If the port or address have changed we should disconnect.
         if addr is not None and self.addr != addr:
             self.disconnect()
             self.addr = addr
@@ -105,6 +130,7 @@ class Networker:
 
         self.trying_connect = True
         while self.trying_connect:
+            # noinspection PyBroadException
             try:
                 self.tcp_sock.connect((self.addr, int(self.port)))
                 self.out_fds = [self.tcp_sock]
@@ -137,8 +163,9 @@ class Networker:
 
     def disconnect(self):
         """
-        Disconnects and resets the connection information.
-        :return: None
+        Disconnects and resets the connection information
+        and sockets being used.
+        @return: None
         """
         if not self.connected:
             return
@@ -147,7 +174,8 @@ class Networker:
         self.logger.warn("Socket disconnecting:")
         self.tcp_sock.close()
         self.udp_sock.close()
-        self.recv_sock = None
+        self.tcp_sock = None
+        self.udp_sock = None
         self.in_fds = []
         self.out_fds = []
 
@@ -157,12 +185,13 @@ class Networker:
     def send(self, message):
         """
         Sends a bytearray.
-        :param message:
-        :return: True if no exceptions were thrown:
+        @param message:
+        @return: True if no exceptions were thrown:
         """
         # TODO logging levels?
         self.logger.info("Sending message: " + str(message))
         # TODO proper error handling?
+        # noinspection PyBroadException
         try:
             self.tcp_sock.send(message)
         except socket.timeout:
@@ -182,7 +211,7 @@ class Networker:
     def read_message(self):
         """
         Reads a full message including header from the PI server.
-        :return: The header type, the number of bytes, the message.
+        @return: The header type, the number of bytes, the message.
         """
         if not self.connected:
             self.logger.error("Trying to read while not connected")
@@ -214,7 +243,7 @@ class Networker:
     def read_header(self):
         """
         Reads a data header from PI server.
-        :return: The header type, The number of bytes
+        @return: The header type, The number of bytes
         """
         b = self._recv(self.server_info.info.header_size)
         if len(b) == 0:
@@ -231,12 +260,13 @@ class Networker:
         """
         Receives a message of length nbytes from the socket.
         Will retry until all bytes have been received.
-        :param nbytes: The number of bytes to receive.
-        :return: The bytes.
+        @param nbytes: The number of bytes to receive.
+        @return: The bytes.
         """
         # print("Attempting to read " + str(nbytes) + " bytes")
         outb = bytes([])
         bcount = 0
+        # noinspection PyBroadException
         try:
             while nbytes > 0:
                 b = self.recv_sock.recv(nbytes)
@@ -250,7 +280,6 @@ class Networker:
 
             self.logger.error("Socket timed out. Trying to disconnect")
             self.disconnect()
-
         except OSError as e:
             self.logger.error("Read failed. OSError:" + e.strerror)
             self.disconnect()

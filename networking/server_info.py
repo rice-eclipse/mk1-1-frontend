@@ -1,8 +1,14 @@
-# A file used to store information related to the information sent by the server on the PI:
+"""
+This file defines ServerInfo, which is used by
+the networker to determine the size of input
+packets and decipher header types.
+"""
+
 
 class ServerInfo:
     """
-    A class that contains all the configuration info, like if we're connected to a pi or not.
+    A class that contains all the configuration info,
+    like if we're connected to a pi or not.
     Used to track manually unpacking structs and other dumb stuff.
     """
 
@@ -60,6 +66,10 @@ class ServerInfo:
     }
 
     class PiInfo:
+        """
+        This class defines constants for how packets
+        are sent by the Pi.
+        """
         byteorder = 'little'
 
         header_type_bytes = 1
@@ -77,6 +87,11 @@ class ServerInfo:
         header_format_string = "c3xi"
 
     class OtherInfo:
+        """
+        This class defines constants for how packets
+        are sent by a non-Pi server, usually the local
+        machine.
+        """
         byteorder = 'little'
 
         header_type_bytes = 1

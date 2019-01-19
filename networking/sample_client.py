@@ -1,4 +1,9 @@
-# right now only one plot is gonna be displayed; just add more if necessary
+"""
+This file defines sample_client.py, which is simplified
+version of GUIBackend + GUIFrontend without the MVC.
+It receives on UDP and transmits on TCP. The ugly global
+variable stuff is not necessary in the actual networker code.
+"""
 
 import socket
 import threading
@@ -14,8 +19,6 @@ from matplotlib.figure import Figure
 
 matplotlib.use("TKAgg")
 
-# udp = socket.socket(type=socket.SOCK_DGRAM)
-# tcp = socket.socket(type=socket.SOCK_STREAM)
 udp = None
 tcp = None
 
@@ -35,21 +38,33 @@ ylist = []
 plot.plot(xlist, ylist)
 
 
-def animate(*args):
+def animate(*_):
+    """
+    Animates the GUI by redrawing the plots and
+    rescaling axes.
+    """
     plot.relim()
     plot.clear()
     plot.plot(xlist, ylist)
 
 
-# thread for data acquisition
-class myThread1(threading.Thread):
-    def __init__(self, threadID, name, counter):
+class Thread(threading.Thread):
+    """
+    A thread separate from the GUI thread that is
+    used for network communications.
+    """
+
+    def __init__(self, thread_id, name, counter):
         threading.Thread.__init__(self)
-        self.threadID = threadID
+        self.threadID = thread_id
         self.name = name
         self.counter = counter
 
     def run(self):
+        """
+        Starts server communications to send
+        and receive over TCP/UDP using select.
+        """
         while in_fds or out_fds:
             _input, _output, _except = select(in_fds, out_fds, [])
 
@@ -71,8 +86,12 @@ class myThread1(threading.Thread):
                     fd.send(str.encode(send_item))
 
 
-# gui set up
-class gui(tk.Tk):
+class GUI(tk.Tk):
+    """
+    A GUI with a basic matplotlib plot and buttons for
+    connecting, disconnecting, and sending byte data.
+    """
+
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
@@ -112,11 +131,19 @@ class gui(tk.Tk):
         canvas.get_tk_widget().grid(row=2, column=0, padx=5, pady=5, sticky="WENS")
 
     def run(self):
+        """
+        Starts the GUI thread.
+        """
         self.mainloop()
 
 
-# function to connect the socket
 def connect_socket(host, port):
+    """
+    Creates UDP and TCP sockets, connects, and places
+    them in the appropriate select sets.
+    @param host: The host to connect to.
+    @param port: The port to connect to.
+    """
     global udp
     global tcp
 
@@ -131,11 +158,15 @@ def connect_socket(host, port):
     out_fds.append(tcp)
 
     # Start listening on UDP. Only send on TCP when a button is pressed.
-    thread1 = myThread1(1, "Thread-1", 1)
-    thread1.start()
+    thread = Thread(1, "Thread-1", 1)
+    thread.start()
 
 
 def disconnect():
+    """
+    Removes and closes the current sockets. Resets
+    the sockets to None so they can be re-created.
+    """
     global udp
     global tcp
 
@@ -147,6 +178,6 @@ def disconnect():
     tcp = None
 
 
-gui1 = gui()
+gui = GUI()
 ani = animation.FuncAnimation(f, animate, interval=100)
-gui1.run()
+gui.run()

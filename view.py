@@ -6,6 +6,7 @@ defined in GUIController.
 """
 
 # import random
+import random
 from tkinter import ttk
 
 import Pmw
@@ -57,6 +58,8 @@ class GUIFrontend:
         self.graph_variables, self.fine_control, self.set_limits = self.init_mission_control_tab()
         self.data_logs, self.network_logs = self.init_logging_tab()
         self.updater, self.graph_area = self.init_refresh_settings()
+
+        # Update as soon as mainloop starts
         self.root.after(0, self.draw_graphs())
 
     def init_tabs_container(self):
@@ -127,8 +130,10 @@ class GUIFrontend:
 
         network_frame = tk.LabelFrame(control_panel, text="Network", background="AliceBlue")
 
-        tk.ttk.Label(network_frame, text="IP", background="AliceBlue").grid(row=1, column=1, sticky="w", padx=15)
-        tk.ttk.Label(network_frame, text="port", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
+        tk.ttk.Label(network_frame, text="IP", background="AliceBlue")\
+            .grid(row=1, column=1, sticky="w", padx=15)
+        tk.ttk.Label(network_frame, text="port", background="AliceBlue")\
+            .grid(row=1, column=2, sticky="w", padx=15)
 
         ip_entry = tk.ttk.Entry(network_frame, width=15)
         ip_entry.insert(tk.END, self.config.get("UI Defaults", "Address"))
@@ -138,19 +143,10 @@ class GUIFrontend:
         port_entry.insert(tk.END, self.config.get("UI Defaults", "Port"))
         port_entry.grid(row=2, column=2, padx=15, sticky="w")
 
-        tk.ttk.Button(
-            network_frame,
-            text="Connect",
-            command=lambda: self.backend_adapter.connect(
-                ip_entry.get(),
-                port_entry.get())) .grid(
-            row=3,
-            column=1,
-            pady=(
-                15,
-                10),
-            padx=15,
-            sticky="w")
+        tk.ttk.Button(network_frame, text="Connect", command=lambda: self.backend_adapter.connect(
+            ip_entry.get(), port_entry.get()))\
+            .grid(row=3, column=1, pady=(15, 10), padx=15, sticky="w")
+
         tk.ttk.Button(network_frame, text="Disconnect", command=lambda: self.backend_adapter.disconnect()) \
             .grid(row=3, column=2, pady=(15, 10), padx=15)
 
@@ -190,41 +186,23 @@ class GUIFrontend:
         tk.ttk.Button(valve_frame, text="Set Valve", command=lambda: self.backend_adapter.send(ServerInfo.SET_VALVE))\
             .grid(row=1, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(
-            valve_frame,
-            text="Unset Valve",
-            command=lambda: self.backend_adapter.send(
-                ServerInfo.UNSET_VALVE)) .grid(
-            row=1,
-            column=2,
-            padx=15,
-            pady=10)
+        tk.ttk.Button(valve_frame, text="Unset Valve", command=lambda: self.backend_adapter.send(
+            ServerInfo.UNSET_VALVE))\
+            .grid(row=1, column=2, padx=15, pady=10)
 
         tk.ttk.Button(valve_frame, text="Water", command=lambda: self.backend_adapter.send(ServerInfo.SET_WATER)) \
             .grid(row=2, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(
-            valve_frame,
-            text="End Water",
-            command=lambda: self.backend_adapter.send(
-                ServerInfo.UNSET_WATER)) .grid(
-            row=2,
-            column=2,
-            padx=15,
-            pady=10)
+        tk.ttk.Button(valve_frame, text="End Water", command=lambda: self.backend_adapter.send(
+            ServerInfo.UNSET_WATER))\
+            .grid(row=2, column=2, padx=15, pady=10)
 
         tk.ttk.Button(valve_frame, text="GITVC", command=lambda: self.backend_adapter.send(ServerInfo.SET_GITVC)) \
             .grid(row=3, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(
-            valve_frame,
-            text="END_GITVC",
-            command=lambda: self.backend_adapter.send(
-                ServerInfo.UNSET_GITVC)) .grid(
-            row=3,
-            column=2,
-            padx=15,
-            pady=10)
+        tk.ttk.Button(valve_frame, text="END_GITVC", command=lambda: self.backend_adapter.send(
+            ServerInfo.UNSET_GITVC))\
+            .grid(row=3, column=2, padx=15, pady=10)
 
         valve_frame.grid(row=3, column=1, pady=10)
 
@@ -403,10 +381,10 @@ class GUIFrontend:
         @return:
         """
         # Randomly generate some data to plot
-        # for queue in self.backend_adapter.get_all_queues():
-        #     length = len(queue) - 1
-        #     for j in range(1, 11):
-        #         queue.append((random.randint(0, 1000), queue[length][1] + j))
+        for queue in self.backend_adapter.get_all_queues():
+            length = len(queue) - 1
+            for j in range(1, 11):
+                queue.append((random.randint(0, 1000), queue[length][1] + j))
         #         queue.append((queue[length][1] + j, queue[length][1] + j))
         #     print (queue)
         # print (self.backend.queues[0][-10:])

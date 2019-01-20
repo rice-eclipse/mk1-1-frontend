@@ -1,7 +1,7 @@
 """
 This file defines GUIFrontend, which contains real-time graphs for
 sensor data and buttons for sending commands to the Pi. The backend
-communicates with the frontend using a Back2FrontAdapter, which is 
+communicates with the frontend using a Back2FrontAdapter, which is
 defined in GUIController.
 """
 
@@ -27,6 +27,7 @@ class GUIFrontend:
     data are questionable, but optimizing this isn't really a
     priority.
     """
+
     def __init__(self, backend_adapter, config):
         self.backend_adapter = backend_adapter
         self.config = config
@@ -51,6 +52,7 @@ class GUIFrontend:
         self.choices = list(labels.keys())
 
         self.notebook = self.init_tabs_container()
+        self.init_calibration_tab()
         self.canvas, self.figure, self.plots, self.axes_list = self.init_graphs()
         self.graph_variables, self.fine_control, self.set_limits = self.init_mission_control_tab()
         self.data_logs, self.network_logs = self.init_logging_tab()
@@ -136,8 +138,19 @@ class GUIFrontend:
         port_entry.insert(tk.END, self.config.get("UI Defaults", "Port"))
         port_entry.grid(row=2, column=2, padx=15, sticky="w")
 
-        tk.ttk.Button(network_frame, text="Connect", command=lambda: self.backend_adapter.connect(ip_entry.get(), port_entry.get()))\
-            .grid(row=3, column=1, pady=(15, 10), padx=15, sticky="w")
+        tk.ttk.Button(
+            network_frame,
+            text="Connect",
+            command=lambda: self.backend_adapter.connect(
+                ip_entry.get(),
+                port_entry.get())) .grid(
+            row=3,
+            column=1,
+            pady=(
+                15,
+                10),
+            padx=15,
+            sticky="w")
         tk.ttk.Button(network_frame, text="Disconnect", command=lambda: self.backend_adapter.disconnect()) \
             .grid(row=3, column=2, pady=(15, 10), padx=15)
 
@@ -177,20 +190,41 @@ class GUIFrontend:
         tk.ttk.Button(valve_frame, text="Set Valve", command=lambda: self.backend_adapter.send(ServerInfo.SET_VALVE))\
             .grid(row=1, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="Unset Valve", command=lambda: self.backend_adapter.send(ServerInfo.UNSET_VALVE))\
-            .grid(row=1, column=2, padx=15, pady=10)
+        tk.ttk.Button(
+            valve_frame,
+            text="Unset Valve",
+            command=lambda: self.backend_adapter.send(
+                ServerInfo.UNSET_VALVE)) .grid(
+            row=1,
+            column=2,
+            padx=15,
+            pady=10)
 
         tk.ttk.Button(valve_frame, text="Water", command=lambda: self.backend_adapter.send(ServerInfo.SET_WATER)) \
             .grid(row=2, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="End Water", command=lambda: self.backend_adapter.send(ServerInfo.UNSET_WATER)) \
-            .grid(row=2, column=2, padx=15, pady=10)
+        tk.ttk.Button(
+            valve_frame,
+            text="End Water",
+            command=lambda: self.backend_adapter.send(
+                ServerInfo.UNSET_WATER)) .grid(
+            row=2,
+            column=2,
+            padx=15,
+            pady=10)
 
         tk.ttk.Button(valve_frame, text="GITVC", command=lambda: self.backend_adapter.send(ServerInfo.SET_GITVC)) \
             .grid(row=3, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="END_GITVC", command=lambda: self.backend_adapter.send(ServerInfo.UNSET_GITVC)) \
-            .grid(row=3, column=2, padx=15, pady=10)
+        tk.ttk.Button(
+            valve_frame,
+            text="END_GITVC",
+            command=lambda: self.backend_adapter.send(
+                ServerInfo.UNSET_GITVC)) .grid(
+            row=3,
+            column=2,
+            padx=15,
+            pady=10)
 
         valve_frame.grid(row=3, column=1, pady=10)
 
@@ -299,10 +333,68 @@ class GUIFrontend:
         Initializes the calibration tab, which is used to conveniently
         store calibration data points and calculate the calibration curve.
         """
-        # todo
-        pass
+        calibration_frame = self.notebook.nametowidget('calibration')
 
-    def animate(self, *args):
+        tk.Label(calibration_frame, text="Raw Value")\
+            .grid(row=1, column=2, pady=10)
+
+        tk.Label(calibration_frame, text="Actual Value") \
+            .grid(row=3, column=2, pady=10)
+
+        raw_value_entry = tk.ttk.Entry(calibration_frame, width=15)
+        actual_value_entry = tk.ttk.Entry(calibration_frame, width=15)
+        raw_value_entry.grid(row=2, column=2, pady=10)
+        actual_value_entry.grid(row=4, column=2, pady=10)
+
+        calib_display = Pmw.ScrolledText(calibration_frame,
+                                         columnheader=1,
+                                         usehullsize=1,
+                                         hull_width=self.width,
+                                         hull_height=350,
+                                         text_wrap='none',
+                                         Header_foreground='blue',
+                                         Header_padx=4,
+                                         hscrollmode='none',
+                                         vscrollmode='none'
+                                         )
+
+        def add_action():
+            """
+            Action for the add button. Adds information to the display
+            and adds the point in the backend.
+            """
+            calib_display.insert('end', "Raw value: {0}     Actual value: {1}\n"
+                                 .format(raw_value_entry.get(), actual_value_entry.get()))
+            self.backend_adapter.add_point((int(raw_value_entry.get()), int(actual_value_entry.get())))
+
+        def clear_action():
+            """
+            Action for the clear button. Clears the displayed points
+            and clears the stored points in the backend.
+            """
+            calib_display.clear()
+            self.backend_adapter.clear_calibration()
+
+        def get_action():
+            """
+            Action for the get button. Gets the calibration result
+            from the backend and displays it.
+            """
+            slope, y_int = self.backend_adapter.get_calibration()
+            calib_display.insert('end', "Slope: {0}     Y intercept: {1}\n"
+                                 .format(slope, y_int))
+
+        calib_display.grid(row=0, column=0, columnspan=6)
+        tk.ttk.Button(calibration_frame, text="Add", command=add_action) \
+            .grid(row=1, column=3, padx=15, pady=10)
+
+        tk.ttk.Button(calibration_frame, text="Clear", command=clear_action) \
+            .grid(row=2, column=3, padx=15, pady=10)
+
+        tk.ttk.Button(calibration_frame, text="Get Calibration", command=get_action) \
+            .grid(row=3, column=3, padx=15, pady=10)
+
+    def animate(self, *_):
         """
         The animation function for the GUI, which delegates
         to updating either the graphs or the log displays.
@@ -315,8 +407,8 @@ class GUIFrontend:
         #     length = len(queue) - 1
         #     for j in range(1, 11):
         #         queue.append((random.randint(0, 1000), queue[length][1] + j))
-                # queue.append((queue[length][1] + j, queue[length][1] + j))
-            # print (queue)
+        #         queue.append((queue[length][1] + j, queue[length][1] + j))
+        #     print (queue)
         # print (self.backend.queues[0][-10:])
 
         # Only graph if we are on the mission control tab

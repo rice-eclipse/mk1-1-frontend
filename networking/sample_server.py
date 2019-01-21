@@ -88,10 +88,10 @@ def main():
             message += pad.to_bytes(7, byteorder='little')
             message += nbytes.to_bytes(4, byteorder='little')
             message += pad.to_bytes(4, byteorder='little')
-            fd.sendto(message, (host, port))
+            # fd.sendto(message, (host, port))
 
             # Send some data
-            message = bytes([])
+            # message = bytes([])
             message += i.to_bytes(2, byteorder='little')
             message += pad.to_bytes(6, byteorder='little')
             message += timestamp.to_bytes(8, byteorder='little')

@@ -10,7 +10,6 @@ from queue import Queue
 
 import sys
 
-import time
 from select import select
 
 from concurrency import run_async
@@ -166,6 +165,10 @@ class Networker:
         self.udp_sock.close()
         self.tcp_sock = None
         self.udp_sock = None
+        self.in_fds.clear()
+        self.out_fds.clear()
+
+        # Create new lists just in in case data races happen
         self.in_fds = []
         self.out_fds = []
 
@@ -204,16 +207,15 @@ class Networker:
             self.logger.error("Trying to read while not connected")
             raise Exception("Not connected. Cannot read.")
 
-        htype, nbytes = self.read_header()
-        # print(htype)
+        # Assume the datagram is smaller than 4096 bytes
+        result = self.recv_sock.recv(4096)
 
-        if nbytes is None or nbytes == 0:
-            message = None
-        else:
-            # message = self._recv(nbytes)
-            # TODO is this always 16?
-            message = self._recv(16)
-            # print(struct.unpack("2Q", message))
+        header_size = self.server_info.info.header_size
+
+        header = result[:header_size]
+        payload = result[header_size:]
+        htype, nbytes = struct.unpack(self.server_info.info.header_format_string, header)
+        return htype, nbytes, payload
 
         # if (message is not None):
         #     if (nbytes <= 64):
@@ -223,58 +225,4 @@ class Networker:
         #         self.logger.debug("Received Full Message: Type:" + str(htype) +
         #                           " Nbytes:" + str(nbytes))
 
-        time.sleep(0.01)
-
-        return htype, nbytes, message
-
-    def read_header(self):
-        """
-        Reads a data header from PI server.
-        @return: The header type, The number of bytes
-        """
-        b = self._recv(self.server_info.info.header_size)
-        if len(b) == 0:
-            return None, None
-
-        htype, nbytes = struct.unpack(self.server_info.info.header_format_string, b)
-
-        # print("header", htype, nbytes)
-        self.logger.debugv("Received message header: Type:" + str(htype) + " Nbytes:" + str(nbytes))
-
-        return htype, nbytes
-
-    def _recv(self, nbytes):
-        """
-        Receives a message of length nbytes from the socket.
-        Will retry until all bytes have been received.
-        @param nbytes: The number of bytes to receive.
-        @return: The bytes.
-        """
-        # print("Attempting to read " + str(nbytes) + " bytes")
-        outb = bytes([])
-        bcount = 0
-        # noinspection PyBroadException
-        try:
-            while nbytes > 0:
-                b = self.recv_sock.recv(nbytes)
-                nbytes -= len(b)
-                bcount += len(b)
-                outb += b
-        except socket.timeout:
-            if bcount > 0:
-                # TODO fix this.
-                self.logger.error("Socket timed out during partial read. Major problem.")
-
-            self.logger.error("Socket timed out. Trying to disconnect")
-            self.disconnect()
-        except OSError as e:
-            self.logger.error("Read failed. OSError:" + e.strerror)
-            self.disconnect()
-        except BaseException:
-            self.logger.error("Read: Unexpected error:" + str(sys.exc_info()[0]))
-            self.disconnect()
-        else:
-            # print(outb)
-            return outb
-
-        return bytes([])
+        # time.sleep(0.01)

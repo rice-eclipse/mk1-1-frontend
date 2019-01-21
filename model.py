@@ -6,6 +6,7 @@ in GUIController
 """
 
 import csv
+import os
 import struct
 import time
 from queue import Queue
@@ -62,7 +63,7 @@ class GUIBackend:
         for queue in self.queues:
             queue.append((0, 0))
 
-        # A dictionary to match mtypes to queues (see _process_recv_message)
+        # A dictionary to match htypes to queues (see _process_recv_message)
         self.queue_dict = {
             ServerInfo.LC1_SEND: self.Q_LC1,
             ServerInfo.LC2_SEND: self.Q_LC2,
@@ -130,9 +131,18 @@ class GUIBackend:
     @run_async
     def start(self):
         """
-        Starts the model by defining a coroutine that continuously
-        processes items in the network queue.
+        Starts the model by continually processing items in
+        the network queue in a new thread. Before it starts,
+        creates the logs folder in the top-level directory if
+        it doesn't already exist.
         """
+        if not os.path.exists(os.path.dirname('logs/')):
+            try:
+                os.makedirs(os.path.dirname('logs/'))
+            except OSError as e:
+                self.logger.error("Error when creating logs directory:" + e.strerror)
+                return
+
         while True:
             time.sleep(0.1)
             if not self.nw.connected:
@@ -150,30 +160,30 @@ class GUIBackend:
             self.logger.debug("Processing Messages")
 
         while self.nw_queue.qsize() > 0:
-            mtype, nbytes, message = self.nw_queue.get()
-            self.logger.debug("Processing message: Type:" + str(mtype) + " Nbytes:" + str(nbytes))
+            htype, nbytes, message = self.nw_queue.get()
+            self.logger.debug("Processing message: Type:" + str(htype) + " Nbytes:" + str(nbytes))
 
             # If the data size isn't what we expect, do nothing
             if nbytes % self.nw.server_info.info.payload_bytes != 0:
                 self.logger.error("Received PAYLOAD message with improper number of bytes:" + str(nbytes))
                 return
-            else:  # Check mtype to determine what to do
-                if mtype == ServerInfo.ACK_VALUE:
+            else:  # Check htype to determine what to do
+                if htype == ServerInfo.ACK_VALUE:
                     pass
-                elif mtype in ServerInfo.filenames.keys():
-                    self.read_payload(message, nbytes, mtype)
-                elif mtype == ServerInfo.TEXT:
+                elif htype in ServerInfo.filenames.keys():
+                    self.read_payload(htype, nbytes, message)
+                elif htype == ServerInfo.TEXT:
                     print(message.decode('utf-8'))
                 else:
-                    self.logger.error("Received incorrect message header type" + str(mtype))
+                    self.logger.error("Received incorrect message header type" + str(htype))
 
-    def read_payload(self, b, num_bytes, msg_type=None):
+    def read_payload(self, msg_type, num_bytes, b):
         """
         Reads a message corresponding to payload data, logging it to a log
         file and placing the data in the queue. Calibration happens here.
-        @param b: The byte array containing the message.
-        @param num_bytes: The number of bytes in the message.
         @param msg_type: The type of message, i.e. which payload.
+        @param num_bytes: The number of bytes in the message.
+        @param b: The byte array containing the message.
         @return: None if the server info has not been initialized.
         """
         info = self.nw.server_info.info
@@ -182,22 +192,14 @@ class GUIBackend:
         if not payload_bytes:
             return None
 
-        assert num_bytes % payload_bytes == 0
-
-        if msg_type is not None and msg_type in ServerInfo.filenames.keys():
-            save_file = open('logs/' + ServerInfo.filenames[msg_type] + '.log', 'a+')
-            writer = csv.writer(save_file, delimiter=" ")
-            # print("Starting logger for message")
-        else:
-            save_file = None
-            writer = None
+        save_file = open('logs/' + ServerInfo.filenames[msg_type] + '.log', 'a+')
+        writer = csv.writer(save_file, delimiter=" ")
 
         bcount = 0
         while bcount < num_bytes:
-            # d, t = self.payload_from_bytes(b[bcount: bcount + self.info.payload_bytes])
-            d, t = struct.unpack("2Q", b[bcount: bcount + info.payload_bytes])
+            d, t = struct.unpack("2Q", b[bcount: bcount + payload_bytes])
 
-            bcount += info.payload_bytes
+            bcount += payload_bytes
 
             if msg_type in ServerInfo.calibrations.keys():
                 calibration = ServerInfo.calibrations[msg_type]
@@ -205,11 +207,10 @@ class GUIBackend:
             else:
                 cal = 0
 
-            if not save_file:
+            if save_file:
                 writer.writerow([str(t), str(d), str(cal)])
             if self.queue_dict[msg_type] is not None:
                 self.queue_dict[msg_type].append((cal, t))
-                # out_queue.put((cal, t))
 
         if save_file:
             save_file.close()

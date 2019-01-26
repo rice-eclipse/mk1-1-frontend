@@ -54,12 +54,12 @@ class Networker:
         close them so you can re-create them here.
         """
         if self.tcp_sock is None:
-            self.tcp_sock = socket.socket(type=socket.SOCK_STREAM)
-            self.tcp_sock.settimeout(50)
+            self.tcp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+            self.tcp_sock.settimeout(5)
 
         if self.udp_sock is None:
-            self.udp_sock = socket.socket(type=socket.SOCK_DGRAM)
-            self.udp_sock.settimeout(50)
+            self.udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+            self.udp_sock.settimeout(5)
 
     def __init__(self, logger, config, queue):
         self.logger = logger
@@ -122,7 +122,7 @@ class Networker:
                 self.out_fds = [self.tcp_sock]
                 self.logger.error("Transmitting on TCP")
                 if self.config.get("Server", "Protocol") == "UDP":
-                    self.udp_sock.bind((self.addr, int(self.port)))
+                    self.udp_sock.bind(('0.0.0.0', int(self.port)))
                     self.recv_sock = self.udp_sock
                     self.logger.error("Receiving on UDP")
                 else:

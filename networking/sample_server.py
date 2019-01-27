@@ -1,10 +1,22 @@
+"""
+This file defines a sample server that sends over UDP
+and receives ove TCP using select. It can be used to
+test the networker used in GUIBackend.
+"""
+
 import socket
-import threading
 import time
 from select import select
 
+from concurrency import run_async
+
 
 def main():
+    """
+    Initializes sockets and select sets.
+    Defines re_listen() which is used for safe reconnection.
+    Sends/receives indefinitely over the two sockets.
+    """
     host = "127.0.0.1"
     port = 1234
 
@@ -24,16 +36,26 @@ def main():
     in_fds = [conn]
     out_fds = [udp_socket]
 
+    @run_async
     def re_listen():
+        """
+        Wraps socket listening code in a new thread and runs
+        it. Allows TCP to accept a new client without affecting
+        UDP.
+        """
         tcp_socket.listen(1)
         tcp_socket.setblocking(True)
-        conn, addr = tcp_socket.accept()
-        print("Received tcp connection", conn)
+        new_conn, _ = tcp_socket.accept()
+        print("Received tcp connection", new_conn)
         tcp_socket.setblocking(False)
-        in_fds.append(conn)
+        in_fds.append(new_conn)
 
     i = 0
     timestamp = 0
+    header_type = 9    # Main load cell
+    nbytes = 16        # Hard-coded for now. See OtherInfo in server_info.py
+    pad = 0
+
     while True:
         _input, _output, _except = select(in_fds, out_fds, [])
 
@@ -47,9 +69,7 @@ def main():
                     fd.close()
                     print("Client connection has been closed")
 
-                    thread = threading.Thread(target=re_listen)
-                    thread.daemon = True
-                    thread.start()
+                    re_listen()
 
                 else:
                     print("received:", str(data).upper())
@@ -59,18 +79,33 @@ def main():
                 fd.close()
                 print("Connection reset")
 
-                thread = threading.Thread(target=re_listen)
-                thread.daemon = True
-                thread.start()
+                re_listen()
 
         for fd in _output:
-            fd.sendto(i.to_bytes(2, byteorder='big'), (host, port))
-            fd.sendto(timestamp.to_bytes(8, byteorder='big'), (host, port))
-            time.sleep(0.05)
-            i = (i + 1) % 100
+            # Send a header
+            message = bytes([])
+            message += header_type.to_bytes(1, byteorder='little')
+            message += pad.to_bytes(7, byteorder='little')
+            message += nbytes.to_bytes(4, byteorder='little')
+            message += pad.to_bytes(4, byteorder='little')
+            # fd.sendto(message, (host, port))
+
+            # Send some data
+            # message = bytes([])
+            message += i.to_bytes(2, byteorder='little')
+            message += pad.to_bytes(6, byteorder='little')
+            message += timestamp.to_bytes(8, byteorder='little')
+            fd.sendto(message, (host, port))
+
+            # Old code for use with sample_client.py
+            # fd.sendto(i.to_bytes(2, byteorder='big'), (host, port))
+            # fd.sendto(timestamp.to_bytes(8, byteorder='big'), (host, port))
+            # time.sleep(0.05)
+
+            i = (i + 10) % 1000
             timestamp = timestamp + 1
 
-        time.sleep(.01)
+        time.sleep(.001)
 
 
 if __name__ == '__main__':

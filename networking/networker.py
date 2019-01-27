@@ -215,7 +215,9 @@ class Networker:
         header = result[:header_size]
         payload = result[header_size:]
         htype, nbytes = struct.unpack(self.server_info.info.header_format_string, header)
-        return htype, nbytes, payload
+        print(nbytes, len(payload))
+        # TODO header size included in nbytes?
+        return htype, nbytes - header_size, payload
 
         # if (message is not None):
         #     if (nbytes <= 64):

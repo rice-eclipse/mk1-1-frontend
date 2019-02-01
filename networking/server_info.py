@@ -37,6 +37,9 @@ class ServerInfo:
     UNSET_WATER = bytes([20])
     SET_GITVC = bytes([21])
     UNSET_GITVC = bytes([22])
+    LEAK_CHECK = bytes([23])
+    FILL = bytes([24])
+    FILL_IDLE = bytes([25])
 
     filenames = {
         LC1_SEND: 'LC1',

@@ -34,7 +34,7 @@ class GUIFrontend:
         self.root = tk.Tk()
         self.root.resizable(False, False)
         self.width = 850
-        self.height = 625
+        self.height = 725
         self.dpi = 75
         self.root.configure(background="AliceBlue")
         self.root.wm_title("Rice Eclipse Mk-1.1 GUI")
@@ -197,6 +197,16 @@ class GUIFrontend:
         tk.ttk.Button(valve_frame, text="END_GITVC", command=lambda: self.backend_adapter.send(
             ServerInfo.UNSET_GITVC))\
             .grid(row=3, column=2, padx=15, pady=10)
+
+        if self.config.get("Engine", "Engine") == "Titan":
+            tk.ttk.Button(valve_frame, text="Leak Check", command=lambda: self.backend_adapter.send(ServerInfo.LEAK_CHECK)) \
+                .grid(row=4, column=1, padx=15, pady=10)
+
+            tk.ttk.Button(valve_frame, text="Fill", command=lambda: self.backend_adapter.send(ServerInfo.FILL)) \
+                .grid(row=4, column=2, padx=15, pady=10)
+
+            tk.ttk.Button(valve_frame, text="Fill Idle", command=lambda: self.backend_adapter.send(ServerInfo.FILL_IDLE)) \
+                .grid(row=5, column=1, padx=15, pady=10)
 
         valve_frame.grid(row=3, column=1, pady=10)
 

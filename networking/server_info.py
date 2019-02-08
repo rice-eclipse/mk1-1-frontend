@@ -4,6 +4,7 @@
 import csv
 import struct
 
+
 class ServerInfo:
     """
     A class that contains all the configuration info, like if we're connected to a pi or not.
@@ -40,6 +41,7 @@ class ServerInfo:
     LEAK_CHECK = bytes([23])
     FILL = bytes([24])
     FILL_IDLE = bytes([25])
+    DEFAULT = bytes([26])
 
     filenames = {
         LC1_SEND: 'LC1',
@@ -141,7 +143,7 @@ class ServerInfo:
             else:
                 cal = 0
 
-            if save_file != None:
+            if save_file is not None:
                 writer.writerow([str(t), str(d), str(cal)])
             if out_queue is not None:
                 out_queue.append((cal, t))

@@ -15,7 +15,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import AutoLocator
 from matplotlib.transforms import Bbox
 
-from gui_constants import data_lengths, samples_to_keep, str_to_byte, data_limits, labels
+from gui_constants import data_lengths, samples_to_keep, str_to_byte, labels
 from networking.server_info import ServerInfo
 
 
@@ -177,36 +177,48 @@ class GUIFrontend:
         # Frame for controlling the valves
         valve_frame = tk.LabelFrame(control_panel, text="Valve", background="AliceBlue")
 
-        tk.ttk.Button(valve_frame, text="Set Valve", command=lambda: self.backend_adapter.send(ServerInfo.SET_VALVE))\
+        tk.ttk.Button(valve_frame, text="Main On", command=lambda: self.backend_adapter.send(ServerInfo.SET_VALVE))\
             .grid(row=1, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="Unset Valve", command=lambda: self.backend_adapter.send(
-            ServerInfo.UNSET_VALVE))\
-            .grid(row=1, column=2, padx=15, pady=10)
-
-        tk.ttk.Button(valve_frame, text="Water", command=lambda: self.backend_adapter.send(ServerInfo.SET_WATER)) \
-            .grid(row=2, column=1, padx=15, pady=10)
-
-        tk.ttk.Button(valve_frame, text="End Water", command=lambda: self.backend_adapter.send(
-            ServerInfo.UNSET_WATER))\
-            .grid(row=2, column=2, padx=15, pady=10)
-
-        tk.ttk.Button(valve_frame, text="GITVC", command=lambda: self.backend_adapter.send(ServerInfo.SET_GITVC)) \
-            .grid(row=3, column=1, padx=15, pady=10)
-
-        tk.ttk.Button(valve_frame, text="END_GITVC", command=lambda: self.backend_adapter.send(
-            ServerInfo.UNSET_GITVC))\
-            .grid(row=3, column=2, padx=15, pady=10)
+        tk.ttk.Button(valve_frame, text="Main Off", command=lambda: self.backend_adapter.send(
+                ServerInfo.UNSET_VALVE)) .grid(row=1, column=2, padx=15, pady=10)
 
         if self.config.get("Engine", "Engine") == "Titan":
-            tk.ttk.Button(valve_frame, text="Leak Check", command=lambda: self.backend_adapter.send(ServerInfo.LEAK_CHECK)) \
-                .grid(row=4, column=1, padx=15, pady=10)
+            tk.ttk.Button(valve_frame, text="Vent On", command=lambda: self.backend_adapter.send(ServerInfo.SET_WATER)) \
+                .grid(row=2, column=1, padx=15, pady=10)
+
+            tk.ttk.Button(valve_frame, text="Vent Off", command=lambda: self.backend_adapter.send(
+                    ServerInfo.UNSET_WATER)) .grid(row=2, column=2, padx=15, pady=10)
+
+            tk.ttk.Button(valve_frame, text="Tank On", command=lambda: self.backend_adapter.send(ServerInfo.SET_GITVC)) \
+                .grid(row=3, column=1, padx=15, pady=10)
+
+            tk.ttk.Button(valve_frame, text="Tank Off", command=lambda: self.backend_adapter.send(
+                    ServerInfo.UNSET_GITVC)) .grid(row=3, column=2, padx=15, pady=10)
+
+            tk.ttk.Button(valve_frame, text="Leak Check", command=lambda: self.backend_adapter.send(
+                    ServerInfo.LEAK_CHECK)) .grid(row=4, column=1, padx=15, pady=10)
 
             tk.ttk.Button(valve_frame, text="Fill", command=lambda: self.backend_adapter.send(ServerInfo.FILL)) \
                 .grid(row=4, column=2, padx=15, pady=10)
 
-            tk.ttk.Button(valve_frame, text="Fill Idle", command=lambda: self.backend_adapter.send(ServerInfo.FILL_IDLE)) \
-                .grid(row=5, column=1, padx=15, pady=10)
+            tk.ttk.Button(valve_frame, text="Fill Idle", command=lambda: self.backend_adapter.send(
+                    ServerInfo.FILL_IDLE)) .grid(row=5, column=1, padx=15, pady=10)
+
+            tk.ttk.Button(valve_frame, text="Default", command=lambda: self.backend_adapter.send(ServerInfo.DEFAULT)) \
+                .grid(row=5, column=2, padx=15, pady=10)
+        else:
+            tk.ttk.Button(valve_frame, text="Water", command=lambda: self.backend_adapter.send(ServerInfo.SET_WATER)) \
+                .grid(row=2, column=1, padx=15, pady=10)
+
+            tk.ttk.Button(valve_frame, text="End Water", command=lambda: self.backend_adapter.send(
+                    ServerInfo.UNSET_WATER)) .grid(row=2, column=2, padx=15, pady=10)
+
+            tk.ttk.Button(valve_frame, text="GITVC", command=lambda: self.backend_adapter.send(ServerInfo.SET_GITVC)) \
+                .grid(row=3, column=1, padx=15, pady=10)
+
+            tk.ttk.Button(valve_frame, text="END_GITVC", command=lambda: self.backend_adapter.send(
+                    ServerInfo.UNSET_GITVC)) .grid(row=3, column=2, padx=15, pady=10)
 
         valve_frame.grid(row=3, column=1, pady=10)
 

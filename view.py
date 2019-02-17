@@ -1,17 +1,16 @@
 """
 This file defines GUIFrontend, which contains real-time graphs for
 sensor data and buttons for sending commands to the Pi. The backend
-communicates with the frontend using a Back2FrontAdapter, which is 
+communicates with the frontend using a Back2FrontAdapter, which is
 defined in GUIController.
 """
 
-# import random
 from tkinter import ttk
 
 import Pmw
 import tkinter as tk
 
-from matplotlib import pyplot, animation
+from matplotlib import pyplot
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import AutoLocator
 from matplotlib.transforms import Bbox
@@ -27,6 +26,7 @@ class GUIFrontend:
     data are questionable, but optimizing this isn't really a
     priority.
     """
+
     def __init__(self, backend_adapter, config):
         self.backend_adapter = backend_adapter
         self.config = config
@@ -38,24 +38,23 @@ class GUIFrontend:
         self.dpi = 75
         self.root.configure(background="AliceBlue")
         self.root.wm_title("Rice Eclipse Mk-1.1 GUI")
-        self.refresh_rate = 1  # In seconds
         self.frame_delay_ms = round(1000 / int(self.config.get("Display", "Target Framerate")))
 
         Pmw.initialise(self.root)
-
-#        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-
         self.frame_count = 0
         self.frames_to_skip = int(self.config.get("Display", "Skip Frames for Axis Update"))
         self.plot_selections = ["LC_MAIN", "LC1", "TC2", "PT_INJE"]
         self.choices = list(labels.keys())
 
         self.notebook = self.init_tabs_container()
+        self.init_calibration_tab()
         self.canvas, self.figure, self.plots, self.axes_list = self.init_graphs()
         self.graph_variables, self.fine_control, self.set_limits = self.init_mission_control_tab()
         self.data_logs, self.network_logs = self.init_logging_tab()
-        self.updater, self.graph_area = self.init_refresh_settings()
-        self.root.after(0, self.draw_graphs())
+        self.graph_area = self.init_refresh_settings()
+
+        # Update as soon as mainloop starts
+        self.root.after(0, self.animate)
 
     def init_tabs_container(self):
         """
@@ -125,8 +124,10 @@ class GUIFrontend:
 
         network_frame = tk.LabelFrame(control_panel, text="Network", background="AliceBlue")
 
-        tk.ttk.Label(network_frame, text="IP", background="AliceBlue").grid(row=1, column=1, sticky="w", padx=15)
-        tk.ttk.Label(network_frame, text="port", background="AliceBlue").grid(row=1, column=2, sticky="w", padx=15)
+        tk.ttk.Label(network_frame, text="IP", background="AliceBlue")\
+            .grid(row=1, column=1, sticky="w", padx=15)
+        tk.ttk.Label(network_frame, text="port", background="AliceBlue")\
+            .grid(row=1, column=2, sticky="w", padx=15)
 
         ip_entry = tk.ttk.Entry(network_frame, width=15)
         ip_entry.insert(tk.END, self.config.get("UI Defaults", "Address"))
@@ -136,8 +137,10 @@ class GUIFrontend:
         port_entry.insert(tk.END, self.config.get("UI Defaults", "Port"))
         port_entry.grid(row=2, column=2, padx=15, sticky="w")
 
-        tk.ttk.Button(network_frame, text="Connect", command=lambda: self.backend_adapter.connect(ip_entry.get(), port_entry.get()))\
+        tk.ttk.Button(network_frame, text="Connect", command=lambda: self.backend_adapter.connect(
+            ip_entry.get(), port_entry.get()))\
             .grid(row=3, column=1, pady=(15, 10), padx=15, sticky="w")
+
         tk.ttk.Button(network_frame, text="Disconnect", command=lambda: self.backend_adapter.disconnect()) \
             .grid(row=3, column=2, pady=(15, 10), padx=15)
 
@@ -177,19 +180,22 @@ class GUIFrontend:
         tk.ttk.Button(valve_frame, text="Set Valve", command=lambda: self.backend_adapter.send(ServerInfo.SET_VALVE))\
             .grid(row=1, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="Unset Valve", command=lambda: self.backend_adapter.send(ServerInfo.UNSET_VALVE))\
+        tk.ttk.Button(valve_frame, text="Unset Valve", command=lambda: self.backend_adapter.send(
+            ServerInfo.UNSET_VALVE))\
             .grid(row=1, column=2, padx=15, pady=10)
 
         tk.ttk.Button(valve_frame, text="Water", command=lambda: self.backend_adapter.send(ServerInfo.SET_WATER)) \
             .grid(row=2, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="End Water", command=lambda: self.backend_adapter.send(ServerInfo.UNSET_WATER)) \
+        tk.ttk.Button(valve_frame, text="End Water", command=lambda: self.backend_adapter.send(
+            ServerInfo.UNSET_WATER))\
             .grid(row=2, column=2, padx=15, pady=10)
 
         tk.ttk.Button(valve_frame, text="GITVC", command=lambda: self.backend_adapter.send(ServerInfo.SET_GITVC)) \
             .grid(row=3, column=1, padx=15, pady=10)
 
-        tk.ttk.Button(valve_frame, text="END_GITVC", command=lambda: self.backend_adapter.send(ServerInfo.UNSET_GITVC)) \
+        tk.ttk.Button(valve_frame, text="END_GITVC", command=lambda: self.backend_adapter.send(
+            ServerInfo.UNSET_GITVC))\
             .grid(row=3, column=2, padx=15, pady=10)
 
         valve_frame.grid(row=3, column=1, pady=10)
@@ -218,39 +224,22 @@ class GUIFrontend:
 
     def init_refresh_settings(self):
         """
-        Initializes refresh settings to either use Matplotlib
-        built-ins or custom blitting, depending on the configs.
-        @return: An updater function and a graph_area. Only one of these
-                 will be non-None. Ideally exclusively use one method once
-                 we figure out which is better.
+        Initializes refresh settings that are used when
+        blitting to relabel axes and other changes in the
+        graph.
+        @return: A graph_area for the graphs.
         """
-        # plt.show()
+        for i in range(4):
+            self.axes_list[i].set_yticks([])
+            self.axes_list[i].set_xticks([])
         self.canvas.draw()
-        if self.config.get("Display", "Use matplotlib Animation") == "True":
-            blit = self.config.get("Display", "Blit") == "True"
-            updater = animation.FuncAnimation(self.figure, self.animate, interval=self.frame_delay_ms, blit=blit)
-            graph_area = None
-        else:
-            # tmp_xtick = []
-            for i in range(4):
-                # tmp_xtick.append(self.axes_list[i].get_xticklabels())
-                self.axes_list[i].set_yticks([])
-                self.axes_list[i].set_xticks([])
-            self.canvas.draw()
-            for i in range(4):
-                # tmp_xtick.append(self.axes_list[i].get_xticklabels())
-                self.axes_list[i].xaxis.set_major_locator(AutoLocator())
-                self.axes_list[i].yaxis.set_major_locator(AutoLocator())
-            # self.axes_list[0].set_xticklabels(tmp_xtick[0])
-            [width, height] = self.canvas.get_width_height()
-            graph_area = self.canvas.copy_from_bbox(Bbox.from_bounds(0, 0, width, height))
-            # self.graphArea = self.canvas.copy_from_bbox(self.plots[0].axes.bbox)
-            # print(self.plots[0].axes.bbox)
-            # print(self.plots[1].axes.bbox)
-            # self.root.after(0, self.draw_graphs())
-            updater = None
+        for i in range(4):
+            self.axes_list[i].xaxis.set_major_locator(AutoLocator())
+            self.axes_list[i].yaxis.set_major_locator(AutoLocator())
+        [width, height] = self.canvas.get_width_height()
+        graph_area = self.canvas.copy_from_bbox(Bbox.from_bounds(0, 0, width, height))
 
-        return updater, graph_area
+        return graph_area
 
     def init_logging_tab(self):
         """
@@ -299,61 +288,89 @@ class GUIFrontend:
         Initializes the calibration tab, which is used to conveniently
         store calibration data points and calculate the calibration curve.
         """
-        # todo
-        pass
+        calibration_frame = self.notebook.nametowidget('calibration')
 
-    def animate(self, *args):
+        tk.Label(calibration_frame, text="Raw Value")\
+            .grid(row=1, column=2, pady=10)
+
+        tk.Label(calibration_frame, text="Actual Value") \
+            .grid(row=3, column=2, pady=10)
+
+        raw_value_entry = tk.ttk.Entry(calibration_frame, width=15)
+        actual_value_entry = tk.ttk.Entry(calibration_frame, width=15)
+        raw_value_entry.grid(row=2, column=2, pady=10)
+        actual_value_entry.grid(row=4, column=2, pady=10)
+
+        calib_display = Pmw.ScrolledText(calibration_frame,
+                                         columnheader=1,
+                                         usehullsize=1,
+                                         hull_width=self.width,
+                                         hull_height=350,
+                                         text_wrap='none',
+                                         Header_foreground='blue',
+                                         Header_padx=4,
+                                         hscrollmode='none',
+                                         vscrollmode='none'
+                                         )
+
+        def add_action():
+            """
+            Action for the add button. Adds information to the display
+            and adds the point in the backend.
+            """
+            calib_display.insert('end', "Raw value: {0}     Actual value: {1}\n"
+                                 .format(raw_value_entry.get(), actual_value_entry.get()))
+            self.backend_adapter.add_point((int(raw_value_entry.get()), int(actual_value_entry.get())))
+
+        def clear_action():
+            """
+            Action for the clear button. Clears the displayed points
+            and clears the stored points in the backend.
+            """
+            calib_display.clear()
+            self.backend_adapter.clear_calibration()
+
+        def get_action():
+            """
+            Action for the get button. Gets the calibration result
+            from the backend and displays it.
+            """
+            slope, y_int = self.backend_adapter.get_calibration()
+            calib_display.insert('end', "Slope: {0}     Y intercept: {1}\n"
+                                 .format(slope, y_int))
+
+        calib_display.grid(row=0, column=0, columnspan=6)
+        tk.ttk.Button(calibration_frame, text="Add", command=add_action) \
+            .grid(row=1, column=3, padx=15, pady=10)
+
+        tk.ttk.Button(calibration_frame, text="Clear", command=clear_action) \
+            .grid(row=2, column=3, padx=15, pady=10)
+
+        tk.ttk.Button(calibration_frame, text="Get Calibration", command=get_action) \
+            .grid(row=3, column=3, padx=15, pady=10)
+
+    def animate(self):
         """
         The animation function for the GUI, which delegates
         to updating either the graphs or the log displays.
-        Uses Matplotlib built-in animations.
-        @param args: Unused args that are required by matplotlib
-        @return:
         """
-        # Randomly generate some data to plot
+        # Generate some random data to test plotting
         # for queue in self.backend_adapter.get_all_queues():
         #     length = len(queue) - 1
         #     for j in range(1, 11):
         #         queue.append((random.randint(0, 1000), queue[length][1] + j))
-                # queue.append((queue[length][1] + j, queue[length][1] + j))
-            # print (queue)
-        # print (self.backend.queues[0][-10:])
 
-        # Only graph if we are on the mission control tab
         if self.notebook.index(self.notebook.select()) == 0:
-            self.update_graphs()
+            self.draw_graphs()
         elif self.notebook.index(self.notebook.select()) == 1:
             self.update_log_displays()
+
+        self.root.after(self.frame_delay_ms, self.animate)
 
     def draw_graphs(self):
         """
         Draws graphs using custom blitting and more fine-grain
         control of the frame rate.
-        """
-        self.root.after(self.frame_delay_ms, self.draw_graphs)
-        self.animate()
-        self.canvas.restore_region(self.graph_area)
-        self.frame_count = self.frame_count + 1
-        if self.frame_count == self.frames_to_skip or self.frames_to_skip == 0:
-            self.frame_count = 0
-            update_axes = True
-        else:
-            update_axes = False
-        for i in range(4):
-            # plt.draw()
-            # self.canvas.draw()
-            self.plots[i].axes.draw_artist(self.plots[i])
-            if update_axes:
-                self.plots[i].axes.draw_artist(self.axes_list[i].get_xaxis())
-                self.plots[i].axes.draw_artist(self.axes_list[i].get_yaxis())
-            else:
-                self.canvas.blit(self.plots[i].axes.bbox)
-        if update_axes:
-            self.canvas.blit(self.plots[0].axes.clipbox)
-
-    def update_graphs(self):
-        """
-        Updates the graphs using Matplotlib built-ins.
         """
         for i in range(4):
             # Get which graph the user has selected and get the appropriate queue from the backend
@@ -371,29 +388,27 @@ class GUIFrontend:
             self.plots[i].set_xdata([t for cal, t in data_queue[-data_length::data_ratio]])
             self.plots[i].set_ydata(y_data)
 
-            # print(time_now)
-            # if time_now - self.last_update[i] > self.refresh_rate:
             self.axes_list[i].relim()
-            self.axes_list[i].set_ylim(auto=True)  # In case ylim was set to a lower value for a different sensor
-
-            if self.set_limits.get() and max(y_data) > data_limits[graph_selection]:
-                self.axes_list[i].set_ylim(ymax=data_limits[graph_selection])
-
             self.axes_list[i].autoscale_view()
-            # self.last_update[i] = time_now
 
-            # We have to do this even if we don't change graphs because the labels get erased after we scale the axes
-            self.axes_list[i].set_title(graph_selection)
-            self.axes_list[i].set_xlabel(labels[graph_selection][0])
-            self.axes_list[i].set_ylabel(labels[graph_selection][1])
-
-            self.plot_selections[i] = graph_selection
-        # return self.plots[1], self.plots[2], self.plots[3], self.plots[0],
-
-    # def on_closing(self):
-    #     if messagebox.askokcancel("Quit", "Do you want to quit?"):
-    #         self.root.destroy()
-        #    self.root.quit()
+        # Update auxiliary data in the graph.
+        # i.e. stuff other than the line.
+        self.canvas.restore_region(self.graph_area)
+        self.frame_count = self.frame_count + 1
+        if self.frame_count == self.frames_to_skip or self.frames_to_skip == 0:
+            self.frame_count = 0
+            update_axes = True
+        else:
+            update_axes = False
+        for i in range(4):
+            self.plots[i].axes.draw_artist(self.plots[i])
+            if update_axes:
+                self.plots[i].axes.draw_artist(self.axes_list[i].get_xaxis())
+                self.plots[i].axes.draw_artist(self.axes_list[i].get_yaxis())
+            else:
+                self.canvas.blit(self.plots[i].axes.bbox)
+        if update_axes:
+            self.canvas.blit(self.plots[0].axes.clipbox)
 
     def update_log_displays(self):
         """
@@ -436,4 +451,3 @@ class GUIFrontend:
         Starts the frontend by starting the tkinter main loop.
         """
         self.root.mainloop()
-        # self.root.after(0, self.draw_graphs())

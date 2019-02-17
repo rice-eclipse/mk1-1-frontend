@@ -16,6 +16,7 @@ class GUIController:
     instantiates each and sets up their adapters so they can communicate
     without breaking decoupling.
     """
+
     def __init__(self):
         config = configparser.RawConfigParser()
         config.read('config.ini')
@@ -26,6 +27,7 @@ class GUIController:
             the backend to call methods on the frontend without depending
             on implementation details in the frontend.
             """
+
             def __init__(self):
                 nonlocal frontend
 
@@ -43,6 +45,7 @@ class GUIController:
             the frontend to call methods on the backend without depending
             on implementation details in the backend.
             """
+
             def __init__(self):
                 nonlocal backend
 
@@ -86,6 +89,30 @@ class GUIController:
                 @return: The queue corresponding to the given name.
                 """
                 return backend.get_queue(name)
+
+            @staticmethod
+            def add_point(p):
+                """
+                Adds a calibration data point for the backend
+                to process.
+                @param p: A (raw_value, expected_value) ordered pair.
+                """
+                backend.add_point(p)
+
+            @staticmethod
+            def clear_calibration():
+                """
+                Removes any stored calibration points from the backend.
+                """
+                backend.clear_calibration()
+
+            @staticmethod
+            def get_calibration():
+                """
+                Calculates the slope and y-intercept of the stored data.
+                Assumes the calibration curve is linear.
+                """
+                return backend.get_calibration()
 
         backend = GUIBackend(Back2FrontAdapter(), config)
         self.backend = backend

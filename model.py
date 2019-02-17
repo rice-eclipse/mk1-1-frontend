@@ -8,11 +8,12 @@ in GUIController
 import csv
 import struct
 import time
-from queue import Queue
 
+from queue import Queue
 from concurrency import run_async
 from logger import LogLevel, Logger
 from networking.networker import Networker, ServerInfo
+from scipy import stats
 
 
 class GUIBackend:
@@ -75,6 +76,8 @@ class GUIBackend:
             ServerInfo.PT_COMB_SEND: self.Q_COMB,
             ServerInfo.PT_INJE_SEND: self.Q_INJE
         }
+
+        self.calib_points = []
 
     def send_text(self, s):
         """
@@ -166,6 +169,31 @@ class GUIBackend:
                     print(message.decode('utf-8'))
                 else:
                     self.logger.error("Received incorrect message header type" + str(mtype))
+
+    def add_point(self, p):
+        """
+        Adds a point to the list of points to use
+        when calculating a calibration cureve.
+        @param p: A (raw_value, expected_value) ordered pair
+        """
+        self.calib_points.append(p)
+
+    def get_calibration(self):
+        """
+        Uses the currently stored calibration points to
+        calculate a calibration curve (slope and y-intercept).
+        Assumes the curve is linear.
+        @return: The slope and y-intercept for calibration
+        """
+        x, y = zip(*self.calib_points)
+
+        return stats.linregress(x, y)[:2]
+
+    def clear_calibration(self):
+        """
+        Removes any currently stored calibration points.
+        """
+        self.calib_points = []
 
     def read_payload(self, b, num_bytes, msg_type=None):
         """

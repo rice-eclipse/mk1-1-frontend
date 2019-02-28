@@ -184,11 +184,11 @@ class GUIFrontend:
                 ServerInfo.UNSET_VALVE)) .grid(row=1, column=2, padx=15, pady=10)
 
         if self.config.get("Engine", "Engine") == "Titan":
-            tk.ttk.Button(valve_frame, text="Vent On", command=lambda: self.backend_adapter.send(ServerInfo.SET_WATER)) \
+            tk.ttk.Button(valve_frame, text="Vent On", command=lambda: self.backend_adapter.send(ServerInfo.SET_PVALVE)) \
                 .grid(row=2, column=1, padx=15, pady=10)
 
             tk.ttk.Button(valve_frame, text="Vent Off", command=lambda: self.backend_adapter.send(
-                    ServerInfo.UNSET_WATER)) .grid(row=2, column=2, padx=15, pady=10)
+                    ServerInfo.UNSET_PVALVE)) .grid(row=2, column=2, padx=15, pady=10)
 
             tk.ttk.Button(valve_frame, text="Tank On", command=lambda: self.backend_adapter.send(ServerInfo.SET_GITVC)) \
                 .grid(row=3, column=1, padx=15, pady=10)
@@ -208,11 +208,11 @@ class GUIFrontend:
             tk.ttk.Button(valve_frame, text="Default", command=lambda: self.backend_adapter.send(ServerInfo.DEFAULT)) \
                 .grid(row=5, column=2, padx=15, pady=10)
         else:
-            tk.ttk.Button(valve_frame, text="Water", command=lambda: self.backend_adapter.send(ServerInfo.SET_WATER)) \
+            tk.ttk.Button(valve_frame, text="PValve", command=lambda: self.backend_adapter.send(ServerInfo.SET_PVALVE)) \
                 .grid(row=2, column=1, padx=15, pady=10)
 
-            tk.ttk.Button(valve_frame, text="End Water", command=lambda: self.backend_adapter.send(
-                    ServerInfo.UNSET_WATER)) .grid(row=2, column=2, padx=15, pady=10)
+            tk.ttk.Button(valve_frame, text="End PValve", command=lambda: self.backend_adapter.send(
+                    ServerInfo.UNSET_PVALVE)) .grid(row=2, column=2, padx=15, pady=10)
 
             tk.ttk.Button(valve_frame, text="GITVC", command=lambda: self.backend_adapter.send(ServerInfo.SET_GITVC)) \
                 .grid(row=3, column=1, padx=15, pady=10)

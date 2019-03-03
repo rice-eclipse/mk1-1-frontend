@@ -6,6 +6,7 @@ in GUIController
 """
 
 import csv
+import os
 import struct
 import time
 
@@ -78,6 +79,7 @@ class GUIBackend:
         }
 
         self.calib_points = []
+        self.init_log_dir()
 
     def send_text(self, s):
         """
@@ -215,14 +217,12 @@ class GUIBackend:
         if msg_type is not None and msg_type in ServerInfo.filenames.keys():
             save_file = open('logs/' + ServerInfo.filenames[msg_type] + '.log', 'a+')
             writer = csv.writer(save_file, delimiter=" ")
-            # print("Starting logger for message")
         else:
             save_file = None
             writer = None
 
         bcount = 0
         while bcount < num_bytes:
-            # d, t = self.payload_from_bytes(b[bcount: bcount + self.info.payload_bytes])
             d, t = struct.unpack("2Q", b[bcount: bcount + info.payload_bytes])
 
             bcount += info.payload_bytes
@@ -237,7 +237,20 @@ class GUIBackend:
                 writer.writerow([str(t), str(d), str(cal)])
             if self.queue_dict[msg_type] is not None:
                 self.queue_dict[msg_type].append((cal, t))
-                # out_queue.put((cal, t))
 
         if save_file:
             save_file.close()
+
+    def init_log_dir(self):
+        """
+        Creates the logs/ directory if it doesn't already exist.
+        This is used to store log files.
+        @return: Nothing.
+        """
+        if not os.path.isdir("logs/"):
+            try:
+                os.mkdir("logs/")
+            except OSError:
+                self.logger.error("Error creating logs directory!")
+        else:
+            self.logger.info("Detected existing logs directory")

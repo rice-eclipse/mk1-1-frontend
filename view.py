@@ -10,6 +10,13 @@ from tkinter import ttk
 import Pmw
 import tkinter as tk
 
+from sys import platform as sys_pf
+
+# Bugfix for Mac OSX
+if sys_pf == 'darwin':
+    import matplotlib
+    matplotlib.use("TkAgg")
+
 from matplotlib import pyplot
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import AutoLocator
@@ -17,7 +24,6 @@ from matplotlib.transforms import Bbox
 
 from gui_constants import data_lengths, samples_to_keep, str_to_byte, labels
 from networking.server_info import ServerInfo
-
 
 class GUIFrontend:
     """

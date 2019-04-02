@@ -42,6 +42,68 @@ class ServerInfo:
     FILL_IDLE = bytes([25])
     DEFAULT = bytes([26])
 
+    @staticmethod
+    def str2msg(s):
+        """
+        Maps a string (e.g. 'LC1_SEND') to the corresponding message above.
+        Returns None if the string is not a valid message type. Useful when
+        reading from config files.
+        """
+        if s == 'ACK_VALUE' or s == 'ack_value':
+            return ServerInfo.ACK_VALUE
+        elif s == 'PAYLOAD' or s == 'payload':
+            return ServerInfo.PAYLOAD
+        elif s == 'TEXT' or s == 'text':
+            return ServerInfo.TEXT
+        elif s == 'UNSET_VALVE' or s == 'unset_valve':
+            return ServerInfo.UNSET_VALVE
+        elif s == 'SET_VALVE' or s == 'set_valve':
+            return ServerInfo.SET_VALVE
+        elif s == 'UNSET_IGNITION' or s == 'unset_ignition':
+            return ServerInfo.UNSET_IGNITION
+        elif s == 'SET_IGNITION' or s == 'set_ignition':
+            return ServerInfo.SET_IGNITION
+        elif s == 'NORM_IGNITE' or s == 'norm_ignite':
+            return ServerInfo.NORM_IGNITE
+        elif s == 'LC_MAIN_SEND' or s == 'lc_main_send':
+            return ServerInfo.LC_MAIN_SEND
+        elif s == 'LC1_SEND' or s == 'lc1_send':
+            return ServerInfo.LC1_SEND
+        elif s == 'LC2_SEND' or s == 'lc2_send':
+            return ServerInfo.LC2_SEND
+        elif s == 'LC3_SEND' or s == 'lc3_send':
+            return ServerInfo.LC3_SEND
+        elif s == 'PT_FEED_SEND' or s == 'pt_feed_send':
+            return ServerInfo.PT_FEED_SEND
+        elif s == 'PT_INJE_SEND' or s == 'pt_inje_send':
+            return ServerInfo.PT_INJE_SEND
+        elif s == 'PT_COMB_SEND' or s == 'pt_comb_send':
+            return ServerInfo.PT_COMB_SEND
+        elif s == 'TC1_SEND' or s == 'tc1_send':
+            return ServerInfo.TC1_SEND
+        elif s == 'TC2_SEND' or s == 'tc2_send':
+            return ServerInfo.TC2_SEND
+        elif s == 'TC3_SEND' or s == 'tc3_send':
+            return ServerInfo.TC3_SEND
+        elif s == 'SET_PVALVE' or s == 'set_pvalve':
+            return ServerInfo.SET_PVALVE
+        elif s == 'UNSET_PVALVE' or s == 'unset_pvalve':
+            return ServerInfo.UNSET_PVALVE
+        elif s == 'SET_GITVC' or s == 'set_gitvc':
+            return ServerInfo.SET_GITVC
+        elif s == 'UNSET_GITVC' or s == 'unset_gitvc':
+            return ServerInfo.UNSET_GITVC
+        elif s == 'LEAK_CHECK' or s == 'leak_check':
+            return ServerInfo.LEAK_CHECK
+        elif s == 'FILL' or s == 'fill':
+            return ServerInfo.FILL
+        elif s == 'FILL_IDLE' or s == 'fill_idle':
+            return ServerInfo.FILL_IDLE
+        elif s == 'DEFAULT' or s == 'default':
+            return ServerInfo.DEFAULT
+        else:
+            return None
+
     filenames = {
         LC1_SEND: 'LC1',
         LC_MAIN_SEND: 'LC_MAIN',
@@ -55,18 +117,19 @@ class ServerInfo:
         TC3_SEND: 'TC3'
     }
 
-    calibrations = {
-        LC_MAIN_SEND: (-.03159, 105),
-        LC1_SEND: (.0093895, 0),
-        LC2_SEND: (-.0092222, 0),
-        LC3_SEND: (.0097715, 0),
-        PT_FEED_SEND: (-0.275787487, 1069),
-        PT_COMB_SEND: (-0.2810327855, 1068),
-        PT_INJE_SEND: (-0.2782331275, 1045),
-        TC1_SEND: (0.1611, -250),
-        TC2_SEND: (0.1611, -250),
-        TC3_SEND: (0.1611, -250)
-    }
+    ### OLD LUNA CALIBRATION DATA, MOVED TO luna_config.ini ###
+    # calibrations = {
+    #     LC_MAIN_SEND: (-.03159, 105),
+    #     LC1_SEND: (.0093895, 0),
+    #     LC2_SEND: (-.0092222, 0),
+    #     LC3_SEND: (.0097715, 0),
+    #     PT_FEED_SEND: (-0.275787487, 1069),
+    #     PT_COMB_SEND: (-0.2810327855, 1068),
+    #     PT_INJE_SEND: (-0.2782331275, 1045),
+    #     TC1_SEND: (0.1611, -250),
+    #     TC2_SEND: (0.1611, -250),
+    #     TC3_SEND: (0.1611, -250)
+    # }
 
     class PiInfo:
         """

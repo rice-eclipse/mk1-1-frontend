@@ -15,7 +15,7 @@ from concurrency import run_async
 from logger import LogLevel, Logger
 from networking.networker import Networker, ServerInfo
 from scipy import stats
-
+from ast import literal_eval
 
 class GUIBackend:
     """
@@ -27,7 +27,11 @@ class GUIBackend:
     def __init__(self, back2front_adapter, config):
         self.back2front_adapter = back2front_adapter
         self.config = config
-        self.info = ServerInfo()
+
+        # Get calibrations dict from ini and parse the values as tuples
+        raw_cal = config['Calibration']
+        self.calibrations = dict([(ServerInfo.str2msg(k), literal_eval(v)) for (k, v) in raw_cal.items()])
+        # self.info = ServerInfo() # <-- unused member
 
         self.nw_queue = Queue()
 
@@ -227,8 +231,8 @@ class GUIBackend:
 
             bcount += info.payload_bytes
 
-            if msg_type in ServerInfo.calibrations.keys():
-                calibration = ServerInfo.calibrations[msg_type]
+            if msg_type in self.calibrations.keys():
+                calibration = self.calibrations[msg_type]
                 cal = d * calibration[0] + calibration[1]
             else:
                 cal = 0

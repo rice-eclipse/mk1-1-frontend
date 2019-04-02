@@ -5,10 +5,15 @@ file to start mission control.
 """
 
 import configparser
+import sys
 
 from model import GUIBackend
 from view import GUIFrontend
 
+
+# TODO: add support for multiple config files
+# - pass config file on command line, like engine controller
+# - remove calibration data from ServerInfo
 
 class GUIController:
     """
@@ -17,9 +22,7 @@ class GUIController:
     without breaking decoupling.
     """
 
-    def __init__(self):
-        config = configparser.RawConfigParser()
-        config.read('config.ini')
+    def __init__(self, config):
 
         class Back2FrontAdapter:
             """
@@ -131,9 +134,18 @@ class GUIController:
 
 def main():
     """
-    Starts mission control by instantiating and starting GUIController.
+    Starts mission control by reading the specified config file, then
+    instantiating and starting GUIController.
     """
-    controller = GUIController()
+    if len(sys.argv) < 2:
+        print("Missing config filename, aborting")
+        sys.exit()
+    config_file = sys.argv[1]
+    config = configparser.RawConfigParser()
+    config.read(config_file)
+    print("Reading config info from " + sys.argv[1] + ":")
+    print(dict(config['Calibration'].items()))
+    controller = GUIController(config)
     controller.start()
 
 

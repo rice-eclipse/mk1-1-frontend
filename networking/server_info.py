@@ -41,6 +41,8 @@ class ServerInfo:
     FILL = bytes([24])
     FILL_IDLE = bytes([25])
     DEFAULT = bytes([26])
+    SET_TAPE = bytes([27])
+    UNSET_TAPE = bytes([28])
 
     @staticmethod
     def str2msg(s):
@@ -101,6 +103,10 @@ class ServerInfo:
             return ServerInfo.FILL_IDLE
         elif s == 'DEFAULT' or s == 'default':
             return ServerInfo.DEFAULT
+        elif s == 'SET_TAPE' or s == 'set_tape':
+            return ServerInfo.SET_TAPE
+        elif s == 'UNSET_TAPE' or s == 'unset_tape':
+            return ServerInfo.UNSET_TAPE
         else:
             return None
 

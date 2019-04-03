@@ -213,6 +213,7 @@ class GUIFrontend:
 
             tk.ttk.Button(valve_frame, text="Default", command=lambda: self.backend_adapter.send(ServerInfo.DEFAULT)) \
                 .grid(row=5, column=2, padx=15, pady=10)
+            
         else:
             tk.ttk.Button(valve_frame, text="PValve", command=lambda: self.backend_adapter.send(ServerInfo.SET_PVALVE)) \
                 .grid(row=2, column=1, padx=15, pady=10)
@@ -227,6 +228,22 @@ class GUIFrontend:
                     ServerInfo.UNSET_GITVC)) .grid(row=3, column=2, padx=15, pady=10)
 
         valve_frame.grid(row=3, column=1, pady=10)
+
+        # Frame for heating tape (Titan only)
+        ign_frame_row_offset = 0 # tape_frame may or may not appear; if it does, need to move ignition_frame one row forward
+        if self.config.get("Engine", "Engine") == "Titan":
+            ign_frame_row_offset = 1
+
+            tape_frame = tk.LabelFrame(control_panel, text="Heating Tape", background="AliceBlue")
+
+            tk.ttk.Button(tape_frame, text="Tape On", command=lambda: self.backend_adapter.send(ServerInfo.SET_TAPE)) \
+                .grid(row=6, column=1, padx=15, pady=10)
+            
+            tk.ttk.Button(tape_frame, text="Tape Off", command=lambda: self.backend_adapter.send(ServerInfo.UNSET_TAPE)) \
+                .grid(row=6, column=2, padx=15, pady=10)
+
+            tape_frame.grid(row=4, column=1, pady=10)
+
 
         # Frame for ignition
         ignition_frame = tk.LabelFrame(control_panel, text="Ignition", background="AliceBlue")
@@ -246,7 +263,7 @@ class GUIFrontend:
         unset_ignition_button.image = unset_ignition_image
         unset_ignition_button.grid(row=3, column=2, padx=15, pady=10)
 
-        ignition_frame.grid(row=4, column=1, pady=15)
+        ignition_frame.grid(row=(4 + ign_frame_row_offset), column=1, pady=15)
 
         return graph_variables, fine_control, set_limits
 
